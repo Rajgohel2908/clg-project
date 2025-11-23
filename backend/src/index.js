@@ -18,6 +18,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/items', require('./routes/items'));
 app.use('/api/swaps', require('./routes/swaps'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/wishlist', require('./routes/wishlist'));
 
 const PORT = process.env.PORT || 5000;
 if (require.main === module) {

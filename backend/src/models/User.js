@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   points: { type: Number, default: 0 },
+  wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Item' }],
   createdAt: { type: Date, default: Date.now }
 });
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '../layouts/Layout';
 import ItemCard from '../components/common/ItemCard';
-import Button from '../components/ui/Button';
+import FilterBar from '../components/items/FilterBar';
 import { itemService } from '../services/itemService';
 
 const Items = () => {
@@ -10,6 +10,7 @@ const Items = () => {
   const [filters, setFilters] = useState({
     category: '',
     condition: '',
+    type: '',
     search: '',
   });
 
@@ -29,18 +30,11 @@ const Items = () => {
     fetchItems();
   }, [fetchItems]);
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
   const clearFilters = () => {
     setFilters({
       category: '',
       condition: '',
+      type: '',
       search: '',
     });
   };
@@ -56,73 +50,11 @@ const Items = () => {
           </div>
 
           {/* Filters */}
-          <div className="bg-white p-6 rounded-lg shadow-sm mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
-                  Search
-                </label>
-                <input
-                  type="text"
-                  id="search"
-                  name="search"
-                  value={filters.search}
-                  onChange={handleFilterChange}
-                  placeholder="Search items..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
-                </label>
-                <select
-                  id="category"
-                  name="category"
-                  value={filters.category}
-                  onChange={handleFilterChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500"
-                >
-                  <option value="">All Categories</option>
-                  <option value="clothing">Clothing</option>
-                  <option value="shoes">Shoes</option>
-                  <option value="accessories">Accessories</option>
-                  <option value="bags">Bags</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="condition" className="block text-sm font-medium text-gray-700 mb-1">
-                  Condition
-                </label>
-                <select
-                  id="condition"
-                  name="condition"
-                  value={filters.condition}
-                  onChange={handleFilterChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500"
-                >
-                  <option value="">All Conditions</option>
-                  <option value="new">New</option>
-                  <option value="like-new">Like New</option>
-                  <option value="good">Good</option>
-                  <option value="fair">Fair</option>
-                </select>
-              </div>
-
-              <div className="flex items-end">
-                <Button
-                  variant="secondary"
-                  onClick={clearFilters}
-                  className="w-full"
-                >
-                  Clear Filters
-                </Button>
-              </div>
-            </div>
-          </div>
+          <FilterBar
+            filters={filters}
+            onFilterChange={setFilters}
+            onClear={clearFilters}
+          />
 
           {/* Items Grid */}
           {loading ? (

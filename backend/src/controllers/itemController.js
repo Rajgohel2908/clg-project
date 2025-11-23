@@ -14,8 +14,15 @@ const calculatePoints = (condition) => {
 
 const listItems = async (req, res) => {
   try {
-    const { category, type, condition, page = 1, limit = 10 } = req.query;
+    const { search, category, type, condition, page = 1, limit = 10 } = req.query;
     const query = { status: 'approved' };
+
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
 
     if (category) query.category = category;
     if (type) query.type = type;
