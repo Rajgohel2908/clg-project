@@ -62,7 +62,7 @@ const getItem = async (req, res) => {
 
 const createItem = async (req, res) => {
   try {
-    const { title, description, category, type, size, condition, tags } = req.body;
+    const { title, description, category, type, size, condition, tags, latitude, longitude } = req.body;
     const images = req.files ? req.files.map(file => file.filename) : [];
 
     // Basic validation
@@ -70,7 +70,8 @@ const createItem = async (req, res) => {
       return res.status(400).json({ message: 'Title, description, category, and condition are required' });
     }
 
-    const item = new Item({
+    // Create item object
+    const itemData = {
       title,
       description,
       images,
@@ -81,8 +82,24 @@ const createItem = async (req, res) => {
       tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
       uploader: req.user.id,
       pointsValue: calculatePoints(condition)
-    });
+    };
 
+    // Add location if coordinates are provided
+    // GeoJSON format: [longitude, latitude] (NOT [latitude, longitude]!)
+    if (latitude && longitude) {
+      const lat = parseFloat(latitude);
+      const lon = parseFloat(longitude);
+
+      // Only add location if valid coordinates
+      if (!isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0) {
+        itemData.location = {
+          type: 'Point',
+          coordinates: [lon, lat] // [longitude, latitude]
+        };
+      }
+    }
+
+    const item = new Item(itemData);
     await item.save();
 
     // Populate uploader for response

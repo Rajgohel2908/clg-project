@@ -1,6 +1,8 @@
+// backend/src/controllers/swapController.js
 const Swap = require('../models/Swap');
 const Item = require('../models/Item');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 
 const createSwap = async (req, res) => {
   try {
@@ -60,6 +62,14 @@ const createSwap = async (req, res) => {
       });
       await swap.save();
 
+      // Create Notification for swap request
+      await Notification.create({
+        recipient: itemRequested.uploader,
+        sender: req.user.id,
+        type: 'swap_request',
+        message: `Someone requested to swap your item: ${itemRequested.title}`
+      });
+
       res.status(201).json(swap);
     }
   } catch (error) {
@@ -108,6 +118,14 @@ const acceptSwap = async (req, res) => {
     swap.status = 'completed';
     await swap.save();
 
+    // Create Notification for swap acceptance
+    await Notification.create({
+      recipient: swap.requester,
+      sender: req.user.id,
+      type: 'swap_accepted',
+      message: `Your swap request was accepted!`
+    });
+
     res.json({ message: 'Swap accepted successfully' });
   } catch (error) {
     console.error(error);
@@ -132,6 +150,14 @@ const rejectSwap = async (req, res) => {
 
     swap.status = 'rejected';
     await swap.save();
+
+    // Create Notification for swap rejection
+    await Notification.create({
+      recipient: swap.requester,
+      sender: req.user.id,
+      type: 'swap_rejected',
+      message: `Your swap request was rejected.`
+    });
 
     res.json({ message: 'Swap rejected successfully' });
   } catch (error) {
