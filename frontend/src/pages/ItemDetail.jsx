@@ -167,11 +167,25 @@ const ItemDetail = () => {
                     </span>
                     <span className="text-sm text-gray-600">{item.category}</span>
                   </div>
-                  <div className="flex items-center text-sm text-gray-600 mb-4">
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    Listed by {item.uploader?.name || 'Anonymous'}
+                  
+                  <div className="flex flex-col gap-2 text-sm text-gray-600 mb-4">
+                    <div className="flex items-center">
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      Listed by {item.uploader?.name || 'Anonymous'}
+                    </div>
+                    
+                    {/* 👇 Location Display Added Here */}
+                    {item.locationName && (
+                      <div className="flex items-center text-green-700 font-medium">
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        {item.locationName}
+                      </div>
+                    )}
                   </div>
                 </div>
 

@@ -3,11 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../layouts/Layout';
 import Button from '../components/ui/Button';
 import { itemService } from '../services/itemService';
+import toast from 'react-hot-toast'; // Make sure to install/import toast if used, otherwise replace with alert
 
 const AddItem = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  
+  // 👇 Updated State with Location Fields
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -20,9 +23,15 @@ const AddItem = () => {
     tags: '',
     pointsValue: 10,
     images: [],
+    latitude: '',
+    longitude: '',
+    locationName: ''
   });
+  
   const [imagePreviews, setImagePreviews] = useState([]);
   const [errors, setErrors] = useState({});
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -58,6 +67,82 @@ const AddItem = () => {
     }
   };
 
+  // 📍 Location Logic 1: GPS
+  const getLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setLocationLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+
+        setFormData(prev => ({
+          ...prev,
+          latitude: lat,
+          longitude: lon
+        }));
+
+        // Reverse Geocoding to get name
+        try {
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+          const data = await response.json();
+          const address = data.address;
+          const city = address.city || address.town || address.village || address.suburb || "Unknown Location";
+          const state = address.state || "";
+          const formattedLocation = `${city}${state ? `, ${state}` : ''}`;
+
+          setFormData(prev => ({ ...prev, locationName: formattedLocation }));
+          alert("Location Detected: " + formattedLocation);
+        } catch (error) {
+          setFormData(prev => ({ ...prev, locationName: "GPS Location Captured" }));
+        } finally {
+          setLocationLoading(false);
+        }
+      },
+      (error) => {
+        setLocationLoading(false);
+        console.error(error);
+        alert("Unable to retrieve location.");
+      }
+    );
+  };
+
+  // 🔍 Location Logic 2: Manual Search
+  const searchLocation = async () => {
+    if (!formData.locationName.trim()) {
+      alert("Please enter a city name to search");
+      return;
+    }
+
+    setSearchLoading(true);
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.locationName)}`);
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        const result = data[0];
+        setFormData(prev => ({
+          ...prev,
+          latitude: parseFloat(result.lat),
+          longitude: parseFloat(result.lon),
+          locationName: result.display_name.split(',').slice(0, 2).join(',') 
+        }));
+        alert("Location Found! Coordinates updated.");
+      } else {
+        alert("Location not found. Try a major city name.");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Search failed.");
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files).slice(0, 5);
     setFormData(prev => ({
@@ -65,7 +150,6 @@ const AddItem = () => {
       images: files
     }));
 
-    // Create preview URLs
     const previews = files.map(file => URL.createObjectURL(file));
     setImagePreviews(previews);
   };
@@ -249,7 +333,7 @@ const AddItem = () => {
                   </div>
                 )}
 
-                {/* Step 2: Item Details */}
+                {/* Step 2: Item Details - LOCATION ADDED HERE */}
                 {currentStep === 2 && (
                   <div className="space-y-4">
                     <div>
@@ -293,6 +377,50 @@ const AddItem = () => {
                       <p className="mt-1 text-sm text-gray-500">{formData.description.length} characters (min 20)</p>
                       {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
                     </div>
+
+                    {/* 👇👇 NEW LOCATION FIELD INJECTED HERE TO MATCH UI 👇👇 */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Location (City/Area)
+                      </label>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="text"
+                          name="locationName"
+                          value={formData.locationName}
+                          onChange={handleChange}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500"
+                          placeholder="Enter city (e.g. Bhavnagar) or use Auto-Detect"
+                        />
+                        <div className="flex gap-2">
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={searchLocation}
+                                disabled={searchLoading}
+                                className="whitespace-nowrap px-3"
+                            >
+                                {searchLoading ? '...' : '🔍 Find'}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={getLocation}
+                                disabled={locationLoading}
+                                className="whitespace-nowrap px-3"
+                                title="Use GPS"
+                            >
+                                {locationLoading ? '...' : '📍 Auto'}
+                            </Button>
+                        </div>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        {formData.latitude 
+                            ? `✅ Coordinates locked: ${parseFloat(formData.latitude).toFixed(4)}, ${parseFloat(formData.longitude).toFixed(4)}` 
+                            : "Helps users find items near them."}
+                      </p>
+                    </div>
+                    {/* 👆👆 END LOCATION FIELD 👆👆 */}
 
                     <div>
                       <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">
@@ -519,6 +647,11 @@ const AddItem = () => {
                               <p className="text-gray-900">{formData.color}</p>
                             </div>
                           )}
+                          {/* Location in Review */}
+                          <div>
+                            <p className="text-sm font-medium text-gray-600">Location</p>
+                            <p className="text-gray-900">{formData.locationName || (formData.latitude ? "Coordinates Captured" : "Not Provided")}</p>
+                          </div>
                         </div>
                       </div>
 

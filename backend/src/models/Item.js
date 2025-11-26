@@ -1,4 +1,3 @@
-// backend/src/models/Item.js
 const mongoose = require('mongoose');
 
 const itemSchema = new mongoose.Schema({
@@ -13,14 +12,18 @@ const itemSchema = new mongoose.Schema({
   uploader: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   status: { type: String, enum: ['pending', 'approved', 'rejected', 'swapped', 'available'], default: 'pending' },
   pointsValue: { type: Number, default: 0 },
-  // New: Geolocation Field
+  
+  // 👇 New Field for Address
+  locationName: { type: String },
+
+  // GeoJSON field (Coordinates)
   location: {
-    type: { type: String, enum: ['Point'], default: 'Point' },
+    type: { type: String, enum: ['Point'] },
     coordinates: { type: [Number], index: '2dsphere' } // [longitude, latitude]
   },
   createdAt: { type: Date, default: Date.now }
 });
 
-itemSchema.index({ location: '2dsphere' }); // Index for geo queries
+itemSchema.index({ location: '2dsphere' });
 
 module.exports = mongoose.model('Item', itemSchema);

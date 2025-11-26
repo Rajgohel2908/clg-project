@@ -32,17 +32,17 @@ const AdminDashboard = () => {
       const response = await api.get('/admin/items/pending');
       setPendingItems(response.data);
       
-      // Mock stats - you can create actual endpoints for these
+      // Mock stats - backend se laa sakta hai agar API banayi ho
       setStats({
-        totalUsers: 0,
-        totalItems: 0,
+        totalUsers: 0, // Placeholder
+        totalItems: 0, // Placeholder
         pendingItems: response.data.length,
-        totalSwaps: 0
+        totalSwaps: 0 // Placeholder
       });
     } catch (error) {
       console.error('Error fetching admin data:', error);
       if (error.response?.status === 403) {
-        alert('Access Denied: You need admin privileges to access this page.');
+        alert('Access Denied: Admin only area.');
         navigate('/');
       }
     } finally {
@@ -196,13 +196,24 @@ const AdminDashboard = () => {
                       <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.description}</p>
                       
                       <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
-                        <span className="capitalize">{item.category}</span>
-                        <span className="capitalize">{item.condition}</span>
+                        <span className="capitalize bg-gray-100 px-2 py-1 rounded">{item.category}</span>
+                        <span className="capitalize bg-gray-100 px-2 py-1 rounded">{item.condition}</span>
                       </div>
 
-                      <div className="text-sm text-gray-600 mb-4">
-                        <p>By: {item.uploader?.name || 'Unknown'}</p>
-                        <p>Points: {item.pointsValue}</p>
+                      <div className="text-sm text-gray-600 mb-4 space-y-1">
+                        <p className="flex items-center">
+                          <span className="font-medium mr-2">By:</span> {item.uploader?.name || 'Unknown'}
+                        </p>
+                        <p className="flex items-center">
+                          <span className="font-medium mr-2">Points:</span> {item.pointsValue}
+                        </p>
+                        {/* 👇 Location added in Grid View */}
+                        {item.locationName && (
+                          <p className="flex items-center text-green-700 truncate">
+                            <span className="font-medium mr-2 text-gray-600">Loc:</span> 
+                            📍 {item.locationName}
+                          </p>
+                        )}
                       </div>
 
                       <div className="flex gap-2">
@@ -211,7 +222,7 @@ const AdminDashboard = () => {
                           onClick={() => setSelectedItem(item)}
                           className="flex-1"
                         >
-                          View Details
+                          Review
                         </Button>
                       </div>
                     </div>
@@ -265,7 +276,7 @@ const AdminDashboard = () => {
                   <h4 className="text-xl font-semibold text-gray-900 mb-2">{selectedItem.title}</h4>
                   <p className="text-gray-700 mb-4">{selectedItem.description}</p>
 
-                  <div className="space-y-2 mb-4">
+                  <div className="space-y-3 mb-4 bg-gray-50 p-4 rounded-lg">
                     <div className="flex justify-between">
                       <span className="text-sm font-medium text-gray-600">Category:</span>
                       <span className="text-sm text-gray-900 capitalize">{selectedItem.category}</span>
@@ -293,6 +304,17 @@ const AdminDashboard = () => {
                     <div className="flex justify-between">
                       <span className="text-sm font-medium text-gray-600">Uploaded By:</span>
                       <span className="text-sm text-gray-900">{selectedItem.uploader?.name || 'Unknown'}</span>
+                    </div>
+                    {/* 👇 Location added in Modal */}
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-gray-600">Location:</span>
+                      <span className="text-sm text-green-700 font-medium flex items-center">
+                        {selectedItem.locationName ? (
+                          <>📍 {selectedItem.locationName}</>
+                        ) : (
+                          <span className="text-gray-400 italic">Not provided</span>
+                        )}
+                      </span>
                     </div>
                   </div>
 

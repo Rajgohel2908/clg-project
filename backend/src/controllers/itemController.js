@@ -20,7 +20,8 @@ const listItems = async (req, res) => {
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
+        { description: { $regex: search, $options: 'i' } },
+        { locationName: { $regex: search, $options: 'i' } } // Search by location too!
       ];
     }
 
@@ -62,15 +63,14 @@ const getItem = async (req, res) => {
 
 const createItem = async (req, res) => {
   try {
-    const { title, description, category, type, size, condition, tags, latitude, longitude } = req.body;
+    // Added locationName to destructuring
+    const { title, description, category, type, size, condition, tags, latitude, longitude, locationName } = req.body;
     const images = req.files ? req.files.map(file => file.filename) : [];
 
-    // Basic validation
     if (!title || !description || !category || !condition) {
       return res.status(400).json({ message: 'Title, description, category, and condition are required' });
     }
 
-    // Create item object
     const itemData = {
       title,
       description,
@@ -81,28 +81,25 @@ const createItem = async (req, res) => {
       condition,
       tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
       uploader: req.user.id,
-      pointsValue: calculatePoints(condition)
+      pointsValue: calculatePoints(condition),
+      locationName: locationName // Saving the address text
     };
 
     // Add location if coordinates are provided
-    // GeoJSON format: [longitude, latitude] (NOT [latitude, longitude]!)
     if (latitude && longitude) {
       const lat = parseFloat(latitude);
       const lon = parseFloat(longitude);
 
-      // Only add location if valid coordinates
       if (!isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0) {
         itemData.location = {
           type: 'Point',
-          coordinates: [lon, lat] // [longitude, latitude]
+          coordinates: [lon, lat]
         };
       }
     }
 
     const item = new Item(itemData);
     await item.save();
-
-    // Populate uploader for response
     await item.populate('uploader', 'name');
 
     res.status(201).json(item);
@@ -115,22 +112,18 @@ const createItem = async (req, res) => {
 const updateItem = async (req, res) => {
   try {
     const item = await Item.findById(req.params.id);
-    if (!item) {
-      return res.status(404).json({ message: 'Item not found' });
-    }
+    if (!item) return res.status(404).json({ message: 'Item not found' });
 
-    // Check if user is the uploader
     if (item.uploader.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
-    // Only allow update if status is pending or available
     if (!['pending', 'available'].includes(item.status)) {
       return res.status(400).json({ message: 'Cannot update item in current status' });
     }
 
-    const { title, description, category, type, size, condition, tags } = req.body;
-    const images = req.files ? req.files.map(file => file.filename) : item.images;
+    const { title, description, category, type, size, condition, tags, locationName } = req.body;
+    const images = req.files && req.files.length > 0 ? req.files.map(file => file.filename) : item.images;
 
     item.title = title || item.title;
     item.description = description || item.description;
@@ -141,6 +134,8 @@ const updateItem = async (req, res) => {
     item.condition = condition || item.condition;
     item.tags = tags ? tags.split(',').map(tag => tag.trim()) : item.tags;
     item.pointsValue = calculatePoints(item.condition);
+    
+    if (locationName) item.locationName = locationName; // Update location name
 
     await item.save();
     await item.populate('uploader', 'name');
@@ -155,11 +150,8 @@ const updateItem = async (req, res) => {
 const deleteItem = async (req, res) => {
   try {
     const item = await Item.findById(req.params.id);
-    if (!item) {
-      return res.status(404).json({ message: 'Item not found' });
-    }
+    if (!item) return res.status(404).json({ message: 'Item not found' });
 
-    // Check if user is the uploader or admin
     if (item.uploader.toString() !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized' });
     }

@@ -1,3 +1,5 @@
+// frontend/src/services/itemService.js
+
 import api from './api';
 
 export const itemService = {
@@ -13,15 +15,13 @@ export const itemService = {
   },
 
   createItem: async (itemData) => {
-    const response = await api.post('/items', itemData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    // REMOVED the manual 'Content-Type' header here. Let the browser do its job.
+    const response = await api.post('/items', itemData); 
     return response.data;
   },
 
   updateItem: async (id, itemData) => {
+    // Same here, if you're sending files, don't force the header
     const response = await api.put(`/items/${id}`, itemData);
     return response.data;
   },
