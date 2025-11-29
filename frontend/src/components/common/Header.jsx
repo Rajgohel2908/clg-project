@@ -46,14 +46,14 @@ const Header = () => {
             <Link to="/add-item" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors">
               List Item
             </Link>
-            <Link to="/dashboard" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors">
-              Dashboard
-            </Link>
             <Link to="/wishlist" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors">
               Wishlist
             </Link>
             <Link to="/swaps" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors">
               My Swaps
+            </Link>
+            <Link to="/dashboard" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors">
+              Dashboard
             </Link>
           </nav>
 
