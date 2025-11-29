@@ -70,6 +70,16 @@ const createSwap = async (req, res) => {
         message: `Someone requested to swap your item: ${itemRequested.title}`
       });
 
+      // GET THE IO INSTANCE
+      const io = req.app.get('io');
+
+      // EMIT TO THE OWNER
+      io.to(itemRequested.uploader.toString()).emit('new_notification', {
+        type: 'swap_request',
+        message: `Someone requested to swap your item: ${itemRequested.title}`,
+        swapId: swap._id
+      });
+
       res.status(201).json(swap);
     }
   } catch (error) {
@@ -126,6 +136,16 @@ const acceptSwap = async (req, res) => {
       message: `Your swap request was accepted!`
     });
 
+    // GET THE IO INSTANCE
+    const io = req.app.get('io');
+
+    // EMIT TO THE REQUESTER
+    io.to(swap.requester.toString()).emit('new_notification', {
+      type: 'swap_accepted',
+      message: `Your swap request was accepted!`,
+      swapId: swap._id
+    });
+
     res.json({ message: 'Swap accepted successfully' });
   } catch (error) {
     console.error(error);
@@ -157,6 +177,16 @@ const rejectSwap = async (req, res) => {
       sender: req.user.id,
       type: 'swap_rejected',
       message: `Your swap request was rejected.`
+    });
+
+    // GET THE IO INSTANCE
+    const io = req.app.get('io');
+
+    // EMIT TO THE REQUESTER
+    io.to(swap.requester.toString()).emit('new_notification', {
+      type: 'swap_rejected',
+      message: `Your swap request was rejected.`,
+      swapId: swap._id
     });
 
     res.json({ message: 'Swap rejected successfully' });

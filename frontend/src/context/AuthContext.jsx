@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '../services/authService';
+import { io } from 'socket.io-client';
+import toast from 'react-hot-toast';
 
 // eslint-disable-next-line react-refresh/only-export-components
 const AuthContext = createContext();
@@ -34,6 +36,22 @@ export const AuthProvider = ({ children }) => {
 
     initAuth();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      const socket = io('http://localhost:5000');
+
+      socket.emit('join_room', user._id || user.id);
+
+      socket.on('new_notification', (data) => {
+        toast.success(data.message);
+      });
+
+      return () => {
+        socket.disconnect();
+      };
+    }
+  }, [user]);
 
   const login = async (email, password) => {
     try {
