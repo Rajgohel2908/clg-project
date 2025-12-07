@@ -4,8 +4,10 @@ import Layout from '../layouts/Layout';
 import ItemCard from '../components/common/ItemCard';
 import Button from '../components/ui/Button';
 import { itemService } from '../services/itemService';
+import { useAuth } from '../context/AuthContext'; // 1. Import useAuth
 
 const Landing = () => {
+  const { user } = useAuth(); // 2. Get user status
   const [featuredItems, setFeaturedItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -16,7 +18,6 @@ const Landing = () => {
   const fetchFeaturedItems = async () => {
     try {
       const data = await itemService.getAllItems({ limit: 6 });
-      // itemService now returns an object with `items` + pagination metadata
       const items = Array.isArray(data) ? data : (data?.items || []);
       setFeaturedItems(items);
     } catch (error) {
@@ -46,11 +47,15 @@ const Landing = () => {
                     Browse Items
                   </Button>
                 </Link>
-                <Link to="/signup">
-                  <Button variant="outline" size="large">
-                    Join Community
-                  </Button>
-                </Link>
+                
+                {/* 3. Conditional rendering: Hide if user is logged in */}
+                {!user && (
+                  <Link to="/signup">
+                    <Button variant="outline" size="large">
+                      Join Community
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -150,22 +155,24 @@ const Landing = () => {
           </div>
         </div>
 
-        {/* CTA Section */}
-        <div className="py-24 bg-green-600">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-3xl font-bold text-white mb-4">
-              Ready to Start Swapping?
-            </h2>
-            <p className="text-xl text-green-100 mb-8">
-              Join thousands of fashion lovers making a positive impact on the environment.
-            </p>
-            <Link to="/signup">
-              <Button size="large" className="bg-green-700 text-white hover:bg-green-800">
-                Get Started Today
-              </Button>
-            </Link>
+        {/* CTA Section - Hide if logged in */}
+        {!user && (
+          <div className="py-24 bg-green-600">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+              <h2 className="text-3xl font-bold text-white mb-4">
+                Ready to Start Swapping?
+              </h2>
+              <p className="text-xl text-green-100 mb-8">
+                Join thousands of fashion lovers making a positive impact on the environment.
+              </p>
+              <Link to="/signup">
+                <Button size="large" className="bg-green-700 text-white hover:bg-green-800">
+                  Get Started Today
+                </Button>
+              </Link>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </Layout>
   );
