@@ -1,17 +1,17 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { UIProvider, useUI } from './context/UIContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { AnimatePresence } from 'framer-motion';
 
-import Login from './pages/Login';
-import Signup from './pages/Signup';
+import AuthModal from './context/AuthModal'; // Login and Signup are now shown in the modal.
 import Dashboard from './pages/Dashboard';
 import Landing from './pages/Landing';
 import Items from './pages/Items';
-// 👇 FIXED IMPORT: File ka naam 'ItemDetail' hai (singular)
-import ItemDetails from './pages/ItemDetail'; 
+// 👇 FIXED: Correct file name 'ItemDetail' (bina 's' ke)
+import ItemDetail from './pages/ItemDetail'; 
 import AddItem from './pages/AddItem';
 import Profile from './pages/Profile';
 import Swaps from './pages/Swaps';
@@ -21,33 +21,39 @@ import AdminDashboard from './pages/AdminDashboard';
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
-  if (!user) return <Navigate to="/login" />;
-  return children;
-};
+  const location = useLocation();
 
-// Public Route Component
-const PublicRoute = ({ children }) => {
-  const { user, loading } = useAuth();
-  if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
-  if (user) return <Navigate to="/dashboard" />;
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen">Loading...</div>; // Or a spinner component
+  }
+
+  if (!user) {
+    // Redirect to home page, but pass a state to tell the app to open the login modal.
+    return <Navigate to="/" state={{ from: location, requireAuth: true }} replace />;
+  }
+
   return children;
 };
 
 function AppRoutes() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { openAuthModal } = useUI();
+
+  useEffect(() => {
+    if (location.state?.requireAuth) {
+      openAuthModal();
+      // Clean the state to prevent modal from re-opening on refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, openAuthModal, navigate]);
 
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Landing />} />
         <Route path="/items" element={<Items />} />
-        
-        {/* Item Details Route */}
-        <Route path="/items/:id" element={<ItemDetails />} />
-
-        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-        <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+        <Route path="/items/:id" element={<ItemDetail />} />
         
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/add-item" element={<ProtectedRoute><AddItem /></ProtectedRoute>} />
@@ -64,7 +70,7 @@ function AppRoutes() {
 
 function App() {
   useEffect(() => {
-    // Optional: Global error handler logging
+    // Global error handler
     window.onerror = function (message, source, lineno, colno, error) {
       console.error('Global error:', { message, source, lineno, colno, error });
     };
@@ -72,10 +78,13 @@ function App() {
 
   return (
     <AuthProvider>
-      <WishlistProvider>
-        <Toaster position="top-right" />
-        <AppRoutes />
-      </WishlistProvider>
+      <UIProvider>
+        <WishlistProvider>
+          <Toaster position="top-right" />
+          <AppRoutes />
+          <AuthModal />
+        </WishlistProvider>
+      </UIProvider>
     </AuthProvider>
   );
 }

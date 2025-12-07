@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import Layout from '../layouts/Layout';
 import Button from '../components/ui/Button';
 import { itemService } from '../services/itemService';
+import { swapService } from '../services/swapService'; // Added swapService import
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
 import { toast } from 'react-hot-toast';
@@ -42,30 +43,17 @@ const ItemDetail = () => {
     }
     setSwapping(true);
     try {
-      // Assuming itemService has a requestSwap or similar method, or using swapService directly
-      // If itemService.requestSwap doesn't exist, we might need to import swapService.
-      // For now, keeping it consistent with previous code structure.
-      // If this fails, we'll need to use swapService.createSwap.
-      // Let's assume you have swapService logic or a placeholder here.
-      // Actually, based on previous context, we used swapService.createSwap in ItemDetail originally.
-      // Let's bring back swapService if needed, but for now using the pattern from your previous request.
-      
-      // Checking previous files, you used swapService.createSwap. 
-      // I will update this to use a generic success message or call swapService if imported.
-      // To keep it simple and working with existing imports (or adding swapService import):
-      
-      const { swapService } = await import('../services/swapService'); // Dynamic import to be safe or add import at top
+      // Using swapService to create a swap request
       await swapService.createSwap({
         itemRequestedId: id,
-        itemOfferedId: null, // Depending on logic
+        itemOfferedId: null, // Logic can be updated if you want to select an item to offer
         type: 'swap' 
       });
       
       toast.success('Swap request sent successfully!');
     } catch (error) {
       console.error(error);
-      // Fallback or specific error handling
-      toast.error('Swap request initiated (Check console/network for real API call)');
+      toast.error(error.response?.data?.message || 'Failed to send swap request');
     } finally {
       setSwapping(false);
     }
@@ -140,7 +128,7 @@ const ItemDetail = () => {
                 <img
                   src={imageUrls[selectedImage]}
                   alt={item.title}
-                  // Image Fit Fix: object-contain
+                  // Image Fit Fix: object-contain to prevent cropping
                   className="w-full h-full object-contain p-2"
                   onError={(e) => { e.target.src = 'https://via.placeholder.com/600x600?text=No+Image'; }}
                 />
