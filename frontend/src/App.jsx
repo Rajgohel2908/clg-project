@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { WishlistProvider } from './context/WishlistContext';
@@ -16,6 +17,14 @@ import Wishlist from './pages/Wishlist';
 import AdminDashboard from './pages/AdminDashboard';
 
 function App() {
+  useEffect(() => {
+    console.log('App mounted');
+    window.onerror = function (message, source, lineno, colno, error) {
+      console.error('Global error caught:', { message, source, lineno, colno, error });
+      // show a visible alert so user notices the runtime error
+      try { alert('Runtime error: ' + message); } catch (e) {}
+    };
+  }, []);
   return (
     <AuthProvider>
       <WishlistProvider>

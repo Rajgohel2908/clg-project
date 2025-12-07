@@ -4,9 +4,14 @@ import api from './api';
 
 export const itemService = {
   getAllItems: async (filters = {}) => {
-    const params = new URLSearchParams(filters);
+    // Accept pagination params in filters: page, limit
+    const paramsObj = { ...filters };
+    if (!paramsObj.page) paramsObj.page = 1;
+    if (!paramsObj.limit) paramsObj.limit = 12;
+    const params = new URLSearchParams(paramsObj);
     const response = await api.get(`/items?${params}`);
-    return response.data.items || [];
+    // Return full response data (items + pagination metadata)
+    return response.data;
   },
 
   getItemById: async (id) => {

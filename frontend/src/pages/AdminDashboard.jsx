@@ -55,7 +55,16 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
       const response = await api.get('/admin/items/pending');
-      setPendingItems(response.data);
+      const data = response.data;
+      // Support both array and { items: [] } shapes
+      if (Array.isArray(data)) {
+        setPendingItems(data);
+      } else if (data && Array.isArray(data.items)) {
+        setPendingItems(data.items);
+      } else {
+        setPendingItems([]);
+      }
+      console.log('fetchPendingItems - count:', Array.isArray(data) ? data.length : (data?.items?.length || 0));
     } catch (error) {
       console.error('Error fetching items:', error);
     } finally {
@@ -130,7 +139,15 @@ const AdminDashboard = () => {
     try {
       setLoadingSelectedUserItems(true);
       const response = await api.get(`/admin/users/${userId}/items`);
-      setSelectedUserItems(response.data || []);
+      // Backend returns { count, items } now — handle both shapes
+      const data = response.data;
+      if (Array.isArray(data)) {
+        setSelectedUserItems(data || []);
+      } else if (data && Array.isArray(data.items)) {
+        setSelectedUserItems(data.items || []);
+      } else {
+        setSelectedUserItems([]);
+      }
     } catch (error) {
       console.error('Error fetching selected user items:', error);
       setSelectedUserItems([]);
@@ -197,29 +214,33 @@ const AdminDashboard = () => {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
               </div>
             ) : activeTab === 'items' ? (
-              // --- ITEMS VIEW ---
               pendingItems.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-600">No pending items to review.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {pendingItems.map((item) => (
-                    <div key={item._id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md">
-                      <img
-                        src={item.images[0] ? `http://localhost:5000/uploads/${item.images[0]}` : 'https://via.placeholder.com/300x200'}
-                        alt={item.title}
-                        className="w-full h-48 object-cover"
-                      />
-                      <div className="p-4">
-                        <h3 className="font-semibold text-gray-900 mb-1">{item.title}</h3>
-                        <p className="text-xs text-gray-500 mb-3">By {item.uploader?.name}</p>
-                        <p className="text-sm text-gray-600 mb-4 line-clamp-2">{item.description}</p>
-                        {item.locationName && <p className="text-xs text-green-600 mb-2">📍 {item.locationName}</p>}
-                        <Button size="small" onClick={() => setSelectedItem(item)} className="w-full">Review</Button>
+                <div>
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-600">Showing {pendingItems.length} pending items</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {pendingItems.map((item) => (
+                      <div key={item._id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md">
+                        <img
+                          src={item.images && item.images[0] ? `http://localhost:5000/uploads/${item.images[0]}` : 'https://via.placeholder.com/300x200'}
+                          alt={item.title}
+                          className="w-full h-48 object-cover"
+                        />
+                        <div className="p-4">
+                          <h3 className="font-semibold text-gray-900 mb-1">{item.title}</h3>
+                          <p className="text-xs text-gray-500 mb-3">By {item.uploader?.name}</p>
+                          <p className="text-sm text-gray-600 mb-4 line-clamp-2">{item.description}</p>
+                          {item.locationName && <p className="text-xs text-green-600 mb-2">📍 {item.locationName}</p>}
+                          <Button size="small" onClick={() => setSelectedItem(item)} className="w-full">Review</Button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )
             ) : (
@@ -307,7 +328,10 @@ const AdminDashboard = () => {
               <h3 className="text-2xl font-bold">{selectedUser.name}'s Items</h3>
               <button onClick={() => setSelectedUser(null)}>✕</button>
             </div>
-            <p className="text-sm text-gray-600 mb-4">Email: {selectedUser.email}</p>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-gray-600">Email: {selectedUser.email}</p>
+              <p className="text-sm text-gray-500">Showing {selectedUserItems.length} items</p>
+            </div>
             {loadingSelectedUserItems ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>

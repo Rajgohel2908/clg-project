@@ -190,7 +190,8 @@ const getUserItemsById = async (req, res) => {
 
     const userId = req.params.id;
     const items = await Item.find({ uploader: userId }).sort({ createdAt: -1 }).populate('uploader', 'name');
-    res.json(items);
+      console.log(`getUserItemsById: user=${userId} itemsFound=${items.length}`);
+      res.json({ count: items.length, items });
   } catch (error) {
     console.error('getUserItemsById error', error);
     res.status(500).json({ message: 'Server error' });

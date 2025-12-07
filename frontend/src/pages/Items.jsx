@@ -7,6 +7,9 @@ import { itemService } from '../services/itemService';
 const Items = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [filters, setFilters] = useState({
     category: '',
     condition: '',
@@ -14,20 +17,30 @@ const Items = () => {
     search: '',
   });
 
-  const fetchItems = useCallback(async () => {
+  const fetchItems = useCallback(async (opts = { page: 1, append: false }) => {
+    const { page: reqPage = 1, append = false } = opts;
     try {
-      setLoading(true);
-      const data = await itemService.getAllItems(filters);
-      setItems(data);
+      if (append) setLoadingMore(true); else setLoading(true);
+      const data = await itemService.getAllItems({ ...filters, page: reqPage });
+      const fetchedItems = data.items || data || [];
+      if (append) {
+        setItems(prev => [...prev, ...fetchedItems]);
+      } else {
+        setItems(fetchedItems);
+      }
+      setPage(data.currentPage || reqPage);
+      setTotalPages(data.totalPages || 1);
     } catch (error) {
       console.error('Error fetching items:', error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   }, [filters]);
 
   useEffect(() => {
-    fetchItems();
+    // whenever filters change, load page 1
+    fetchItems({ page: 1, append: false });
   }, [fetchItems]);
 
   const clearFilters = () => {
@@ -37,6 +50,12 @@ const Items = () => {
       type: '',
       search: '',
     });
+  };
+
+  const handleLoadMore = () => {
+    if (page >= totalPages) return;
+    const next = page + 1;
+    fetchItems({ page: next, append: true });
   };
 
   return (
@@ -67,11 +86,24 @@ const Items = () => {
               <p className="text-gray-600">Try adjusting your filters or check back later.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {items.map((item) => (
-                <ItemCard key={item._id} item={item} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {items.map((item) => (
+                  <ItemCard key={item._id} item={item} />
+                ))}
+              </div>
+              {page < totalPages && (
+                <div className="mt-8 text-center">
+                  <button
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                  >
+                    {loadingMore ? 'Loading...' : 'Load more'}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -16,7 +16,9 @@ const Landing = () => {
   const fetchFeaturedItems = async () => {
     try {
       const data = await itemService.getAllItems({ limit: 6 });
-      setFeaturedItems(data);
+      // itemService now returns an object with `items` + pagination metadata
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      setFeaturedItems(items);
     } catch (error) {
       console.error('Error fetching featured items:', error);
     } finally {
