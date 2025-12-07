@@ -22,7 +22,7 @@ const FilterBar = ({ filters, onFilterChange, onClear }) => {
                 />
             </div>
 
-            {/* Category Filter */}
+            {/* Category Filter - Updated to match seed data and AddItem.jsx */}
             <div className="w-full md:w-40">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                 <select
@@ -32,9 +32,11 @@ const FilterBar = ({ filters, onFilterChange, onClear }) => {
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
                 >
                     <option value="">All Categories</option>
-                    <option value="Men">Men</option>
-                    <option value="Women">Women</option>
-                    <option value="Kids">Kids</option>
+                    <option value="clothing">Clothing</option>
+                    <option value="shoes">Shoes</option>
+                    <option value="accessories">Accessories</option>
+                    <option value="bags">Bags</option>
+                    <option value="other">Other</option>
                 </select>
             </div>
 
@@ -52,23 +54,6 @@ const FilterBar = ({ filters, onFilterChange, onClear }) => {
                     <option value="like new">Like New</option>
                     <option value="good">Good</option>
                     <option value="fair">Fair</option>
-                </select>
-            </div>
-
-            {/* Type Filter */}
-            <div className="w-full md:w-40">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                <select
-                    name="type"
-                    value={filters.type || ''}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
-                >
-                    <option value="">All Types</option>
-                    <option value="Top">Top</option>
-                    <option value="Bottom">Bottom</option>
-                    <option value="Shoes">Shoes</option>
-                    <option value="Accessory">Accessory</option>
                 </select>
             </div>
 
