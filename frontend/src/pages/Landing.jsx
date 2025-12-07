@@ -158,7 +158,7 @@ const Landing = () => {
               Join thousands of fashion lovers making a positive impact on the environment.
             </p>
             <Link to="/signup">
-              <Button size="large" className="bg-white text-green-600 hover:bg-gray-50">
+              <Button size="large" className="bg-green-700 text-white hover:bg-green-800">
                 Get Started Today
               </Button>
             </Link>

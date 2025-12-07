@@ -20,7 +20,9 @@ const ItemCard = ({ item }) => {
   const inWishlist = isInWishlist(_id);
 
   const imageUrl = images[0]
-    ? `http://localhost:5000/uploads/${images[0]}`
+    ? images[0].startsWith('http')
+      ? images[0]
+      : `http://localhost:5000/uploads/${images[0]}`
     : '/placeholder-item.jpg';
 
   const handleWishlistToggle = (e) => {

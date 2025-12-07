@@ -22,6 +22,9 @@ const AdminDashboard = () => {
   });
   
   const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUserItems, setSelectedUserItems] = useState([]);
+  const [loadingSelectedUserItems, setLoadingSelectedUserItems] = useState(false);
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -110,6 +113,33 @@ const AdminDashboard = () => {
     }
   };
 
+  // User Actions
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm('Are you sure you want to delete this user and all their items?')) return;
+    try {
+      await api.delete(`/admin/users/${userId}`);
+      setUsersList(usersList.filter(u => u._id !== userId));
+      setSelectedUser(null);
+      alert('User deleted successfully!');
+    } catch (error) {
+      alert('Failed to delete user');
+    }
+  };
+
+  const fetchSelectedUserItems = async (userId) => {
+    try {
+      setLoadingSelectedUserItems(true);
+      const response = await api.get(`/admin/users/${userId}/items`);
+      setSelectedUserItems(response.data || []);
+    } catch (error) {
+      console.error('Error fetching selected user items:', error);
+      setSelectedUserItems([]);
+    } finally {
+      setLoadingSelectedUserItems(false);
+    }
+  };
+
+
   if (!user || user.role !== 'admin') return null;
 
   return (
@@ -194,34 +224,56 @@ const AdminDashboard = () => {
               )
             ) : (
               // --- USERS VIEW ---
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Points</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+              <div className="space-y-4">
+                {usersList.length === 0 ? (
+                  <p className="text-center text-gray-600 py-12">No users found</p>
+                ) : (
+                  <div className="grid gap-4">
                     {usersList.map((u) => (
-                      <tr key={u._id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{u.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.email}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">{u.points}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(u.createdAt).toLocaleDateString()}</td>
-                      </tr>
+                      <div key={u._id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900">{u.name}</h3>
+                            <p className="text-sm text-gray-500">{u.email}</p>
+                            <p className="text-xs text-gray-400 mt-1">Joined: {new Date(u.createdAt).toLocaleDateString()}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-green-600">{u.points}</p>
+                            <p className="text-xs text-gray-500">Points</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
+                          {/* Edit Points and Security options removed per request */}
+                          <button
+                            onClick={() => {
+                              setSelectedUser(u);
+                              fetchSelectedUserItems(u._id);
+                            }}
+                            className="px-3 py-1 bg-orange-100 text-orange-700 rounded text-xs font-medium hover:bg-orange-200"
+                          >
+                            View Items
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(u._id)}
+                            className="px-3 py-1 bg-red-100 text-red-700 rounded text-xs font-medium hover:bg-red-200"
+                          >
+                            Delete User
+                          </button>
+                        </div>
+
+                        {/* points editing removed */}
+                      </div>
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Item Detail Modal (Same as before, just simplified here) */}
+      {/* Item Detail Modal */}
       {selectedItem && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
@@ -246,6 +298,45 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* User Detail Modal - View User Items */}
+      {selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between mb-4">
+              <h3 className="text-2xl font-bold">{selectedUser.name}'s Items</h3>
+              <button onClick={() => setSelectedUser(null)}>✕</button>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">Email: {selectedUser.email}</p>
+            {loadingSelectedUserItems ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+              </div>
+            ) : selectedUserItems.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">No items found for this user.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {selectedUserItems.map(item => (
+                  <div key={item._id} className="border border-gray-200 rounded-lg overflow-hidden">
+                    <img
+                      src={item.images && item.images.length > 0 ? `http://localhost:5000/uploads/${item.images[0]}` : 'https://via.placeholder.com/300x200'}
+                      alt={item.title}
+                      className="w-full h-40 object-cover"
+                    />
+                    <div className="p-3">
+                      <h4 className="font-semibold text-gray-900">{item.title}</h4>
+                      <p className="text-xs text-gray-500">Status: {item.status}</p>
+                      <p className="text-sm text-gray-600 mt-2 line-clamp-2">{item.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Security modal removed per request */}
     </Layout>
   );
 };

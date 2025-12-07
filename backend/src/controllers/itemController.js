@@ -67,6 +67,11 @@ const createItem = async (req, res) => {
     const { title, description, category, type, size, condition, tags, latitude, longitude, locationName } = req.body;
     const images = req.files ? req.files.map(file => file.filename) : [];
 
+    console.log('CreateItem called');
+    console.log('Files received:', req.files);
+    console.log('Image filenames:', images);
+    console.log('User:', req.user?.id);
+
     if (!title || !description || !category || !condition) {
       return res.status(400).json({ message: 'Title, description, category, and condition are required' });
     }
@@ -82,7 +87,8 @@ const createItem = async (req, res) => {
       tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
       uploader: req.user.id,
       pointsValue: calculatePoints(condition),
-      locationName: locationName // Saving the address text
+      locationName: locationName, // Saving the address text
+      status: 'pending' // Set to pending for admin approval
     };
 
     // Add location if coordinates are provided

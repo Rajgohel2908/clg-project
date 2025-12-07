@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import Layout from '../layouts/Layout';
 import Button from '../components/ui/Button';
 import { swapService } from '../services/swapService';
@@ -42,9 +43,18 @@ const Swaps = () => {
     }
   };
 
+  const handleCompleteSwap = async (swapId) => {
+    try {
+      await swapService.completeSwap(swapId);
+      fetchSwaps();
+    } catch (error) {
+      console.error('Error completing swap:', error);
+    }
+  };
+
   const filteredSwaps = swaps.filter(swap => {
     if (activeTab === 'all') return true;
-    return swap.status.toLowerCase() === activeTab;
+    return (swap.status || '').toString().toLowerCase() === activeTab;
   });
 
   const getStatusColor = (status) => {
@@ -141,7 +151,7 @@ const Swaps = () => {
                     </div>
                   </div>
 
-                  {swap.status === 'pending' && (
+                  {swap.status?.toString().toLowerCase() === 'pending' && (
                     <div className="flex justify-end space-x-3">
                       <Button
                         variant="outline"
@@ -160,15 +170,24 @@ const Swaps = () => {
                     </div>
                   )}
 
-                  {swap.status === 'accepted' && (
+                  {swap.status?.toString().toLowerCase() === 'accepted' && (
                     <div className="bg-green-50 border border-green-200 rounded-md p-4">
                       <p className="text-sm text-green-800">
                         🎉 Swap accepted! Contact {swap.requestedItem?.owner?.name} to arrange the exchange.
                       </p>
+
+                      {/* Show complete button to participants */}
+                      {user && (user.id === swap.requester?._id || user.id === swap.owner?._id) && (
+                        <div className="mt-3 flex justify-end">
+                          <Button variant="primary" size="small" onClick={() => handleCompleteSwap(swap._id)}>
+                            Mark Completed
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {swap.status === 'completed' && (
+                  {swap.status?.toString().toLowerCase() === 'completed' && (
                     <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
                       <p className="text-sm text-blue-800">
                         ✅ This swap has been completed successfully!

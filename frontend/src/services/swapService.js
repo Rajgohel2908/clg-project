@@ -40,4 +40,9 @@ export const swapService = {
     const response = await api.put(`/swaps/${id}/reject`);
     return response.data;
   },
+
+  completeSwap: async (id) => {
+    const response = await api.put(`/swaps/${id}/complete`);
+    return response.data;
+  },
 };

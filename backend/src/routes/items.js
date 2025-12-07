@@ -2,12 +2,20 @@ const express = require('express');
 const { listItems, getItem, createItem, updateItem, deleteItem, getUserItems } = require('../controllers/itemController');
 const auth = require('../middleware/auth');
 const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const router = express.Router();
 
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 // Multer config for image uploads
 const storage = multer.diskStorage({
-  destination: 'src/uploads/',
+  destination: uploadsDir,
   filename: (req, file, cb) => {
     cb(null, Date.now() + '-' + file.originalname);
   }

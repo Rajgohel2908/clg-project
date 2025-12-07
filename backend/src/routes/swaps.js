@@ -1,5 +1,5 @@
 const express = require('express');
-const { createSwap, listUserSwaps, acceptSwap, rejectSwap } = require('../controllers/swapController');
+const { createSwap, listUserSwaps, acceptSwap, rejectSwap, completeSwap, debugSwaps } = require('../controllers/swapController');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
@@ -18,5 +18,11 @@ router.put('/:id/accept', acceptSwap);
 
 // Reject a swap (owner only)
 router.put('/:id/reject', rejectSwap);
+
+// Mark swap completed (participants)
+router.put('/:id/complete', completeSwap);
+
+// Debug route: GET /api/swaps/debug/:userId  (only active in non-production or when DEBUG=true)
+router.get('/debug/:userId', (req, res) => debugSwaps(req, res));
 
 module.exports = router;

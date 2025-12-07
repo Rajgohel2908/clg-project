@@ -85,7 +85,7 @@ const seedData = async () => {
                 type: 'Education',
                 condition: 'Good',
                 uploader: alice._id,
-                status: 'available',
+                status: 'approved',
                 pointsValue: 10,
                 location: getRandLoc(),
                 images: ['https://via.placeholder.com/300?text=Calculus+Book']
@@ -97,7 +97,7 @@ const seedData = async () => {
                 type: 'Gadgets',
                 condition: 'Like New',
                 uploader: alice._id,
-                status: 'available',
+                status: 'approved',
                 pointsValue: 15,
                 location: getRandLoc(),
                 images: ['https://via.placeholder.com/300?text=Calculator']
@@ -109,7 +109,7 @@ const seedData = async () => {
                 type: 'Uniform',
                 condition: 'Fair',
                 uploader: bob._id,
-                status: 'available',
+                status: 'approved',
                 pointsValue: 5,
                 location: getRandLoc(),
                 images: ['https://via.placeholder.com/300?text=Lab+Coat']
@@ -133,7 +133,7 @@ const seedData = async () => {
                 type: 'Instrument',
                 condition: 'Used',
                 uploader: charlie._id,
-                status: 'available',
+                status: 'approved',
                 pointsValue: 25,
                 location: getRandLoc(),
                 images: ['https://via.placeholder.com/300?text=Guitar']
@@ -157,7 +157,7 @@ const seedData = async () => {
                 type: 'Laptop',
                 condition: 'Used',
                 uploader: admin._id,
-                status: 'available',
+                status: 'approved',
                 pointsValue: 50,
                 location: getRandLoc(),
                 images: ['https://via.placeholder.com/300?text=MacBook']
