@@ -3,11 +3,11 @@ import Layout from '../layouts/Layout';
 import ItemCard from '../components/common/ItemCard';
 import FilterBar from '../components/items/FilterBar';
 import { itemService } from '../services/itemService';
+import { motion } from 'framer-motion';
 
 const Items = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [filters, setFilters] = useState({
@@ -17,89 +17,133 @@ const Items = () => {
     search: '',
   });
 
-  const fetchItems = useCallback(async (opts = { page: 1, append: false }) => {
-    const { page: reqPage = 1, append = false } = opts;
+  const fetchItems = useCallback(async (currPage) => {
     try {
-      if (append) setLoadingMore(true); else setLoading(true);
-      const data = await itemService.getAllItems({ ...filters, page: reqPage });
+      setLoading(true);
+      // Pass page to API
+      const data = await itemService.getAllItems({ ...filters, page: currPage, limit: 12 });
       const fetchedItems = data.items || data || [];
-      if (append) {
-        setItems(prev => [...prev, ...fetchedItems]);
-      } else {
-        setItems(fetchedItems);
-      }
-      setPage(data.currentPage || reqPage);
+      
+      setItems(fetchedItems);
+      setPage(data.currentPage || currPage);
       setTotalPages(data.totalPages || 1);
     } catch (error) {
       console.error('Error fetching items:', error);
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
   }, [filters]);
 
   useEffect(() => {
-    // whenever filters change, load page 1
-    fetchItems({ page: 1, append: false });
-  }, [fetchItems]);
+    // Reset to page 1 on filter change
+    setPage(1);
+    fetchItems(1);
+  }, [filters]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const clearFilters = () => {
-    setFilters({
-      category: '',
-      condition: '',
-      type: '',
-      search: '',
-    });
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPage(newPage);
+      fetchItems(newPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
-  const handleLoadMore = () => {
-    if (page >= totalPages) return;
-    const next = page + 1;
-    fetchItems({ page: next, append: true });
+  const clearFilters = () => {
+    setFilters({ category: '', condition: '', type: '', search: '' });
   };
 
   return (
     <Layout>
-      <div className="bg-gray-50 min-h-screen">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Browse Items</h1>
-            <p className="text-gray-600">Discover amazing items available for swap in our community.</p>
+      {/* 4. Pure Background with Blurry Touch */}
+      <div className="min-h-screen bg-[#f8fafc] relative overflow-hidden">
+        {/* Background Blobs for Premium Feel */}
+        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-green-200/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-blue-200/20 rounded-full blur-3xl translate-x-1/2 translate-y-1/2 pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
+          
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-3">
+              Discover <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-teal-500">Unique Finds</span>
+            </h1>
+            <p className="text-gray-500 font-medium">Explore the best swapped items in your community</p>
           </div>
 
-          {/* Filters */}
           <FilterBar
             filters={filters}
             onFilterChange={setFilters}
             onClear={clearFilters}
           />
 
-          {/* Items Grid */}
           {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+               {[...Array(8)].map((_, i) => (
+                 <div key={i} className="h-[400px] bg-white/60 rounded-3xl animate-pulse shadow-sm" />
+               ))}
             </div>
           ) : items.length === 0 ? (
-            <div className="text-center py-12">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No items found</h3>
-              <p className="text-gray-600">Try adjusting your filters or check back later.</p>
+            <div className="text-center py-24 bg-white/50 backdrop-blur-sm rounded-[3rem] border border-white/60 shadow-sm">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">No items found</h3>
+              <p className="text-gray-500">Try adjusting your filters to find what you're looking for.</p>
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {items.map((item) => (
-                  <ItemCard key={item._id} item={item} />
+              {/* Items Grid with animation stagger */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {items.map((item, index) => (
+                  <motion.div
+                    key={item._id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <ItemCard item={item} />
+                  </motion.div>
                 ))}
               </div>
-              {page < totalPages && (
-                <div className="mt-8 text-center">
-                  <button
-                    onClick={handleLoadMore}
-                    disabled={loadingMore}
-                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+
+              {/* 7. Modern Numbered Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-16 flex justify-center items-center gap-2">
+                  <button 
+                    onClick={() => handlePageChange(page - 1)}
+                    disabled={page === 1}
+                    className="p-3 rounded-full bg-white shadow-sm border border-gray-100 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-110"
                   >
-                    {loadingMore ? 'Loading...' : 'Load more'}
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                  </button>
+
+                  <div className="flex gap-2 bg-white/70 backdrop-blur-md px-4 py-2 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-white/50">
+                    {[...Array(totalPages)].map((_, i) => {
+                        const p = i + 1;
+                        return (
+                            <button
+                                key={p}
+                                onClick={() => handlePageChange(p)}
+                                className={`w-10 h-10 rounded-full font-bold text-sm transition-all relative ${
+                                    page === p 
+                                    ? 'text-white shadow-lg shadow-green-500/30 scale-110' 
+                                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800'
+                                }`}
+                            >
+                                {page === p && (
+                                    <motion.div 
+                                        layoutId="page-indicator"
+                                        className="absolute inset-0 bg-gradient-to-tr from-green-500 to-teal-500 rounded-full -z-10" 
+                                    />
+                                )}
+                                {p}
+                            </button>
+                        )
+                    })}
+                  </div>
+
+                  <button 
+                    onClick={() => handlePageChange(page + 1)}
+                    disabled={page === totalPages}
+                    className="p-3 rounded-full bg-white shadow-sm border border-gray-100 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-110"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                   </button>
                 </div>
               )}
