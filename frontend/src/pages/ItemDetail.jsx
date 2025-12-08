@@ -3,21 +3,31 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import Layout from '../layouts/Layout';
 import Button from '../components/ui/Button';
 import { itemService } from '../services/itemService';
-import { swapService } from '../services/swapService'; // Added swapService import
+import { swapService } from '../services/swapService';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
 import { toast } from 'react-hot-toast';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const ItemDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
+  
+  // Swap Logic States
   const [swapping, setSwapping] = useState(false);
+  const [showSwapModal, setShowSwapModal] = useState(false);
+  const [myItems, setMyItems] = useState([]);
+  const [selectedOfferId, setSelectedOfferId] = useState(null);
+  const [loadingMyItems, setLoadingMyItems] = useState(false);
+
+  // 👇 FIX: User ID ko standardize kiya (Login vs Refresh issue fix)
+  const currentUserId = user ? (user._id || user.id) : null;
 
   useEffect(() => {
     fetchItemDetails();
@@ -35,22 +45,59 @@ const ItemDetail = () => {
     }
   };
 
-  const handleSwapRequest = async () => {
-    if (!user) {
+  // 1. Open Modal & Fetch My Items
+  const handleSwapClick = async () => {
+    if (!currentUserId) {
       toast.error('Please login to request a swap');
-      navigate('/login');
+      // Agar AuthModal context se open kar sakein to wo karein, nahi to redirect
+      navigate('/'); 
       return;
     }
+
+    // 👇 FIX: Owner check ab 'currentUserId' use karega
+    const ownerId = item.uploader?._id || item.owner?._id;
+    if (ownerId === currentUserId) {
+        toast.error("You cannot swap with your own item!");
+        return;
+    }
+
+    setShowSwapModal(true);
+    setLoadingMyItems(true);
+
+    try {
+      const items = await itemService.getMyItems();
+      // Filter items: Approved/Available AND not the current item
+      const validItems = items.filter(i => 
+        ['approved', 'available'].includes(i.status) && i._id !== id
+      );
+      setMyItems(validItems);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load your items");
+      setShowSwapModal(false);
+    } finally {
+      setLoadingMyItems(false);
+    }
+  };
+
+  // 2. Submit the Swap Request
+  const submitSwapRequest = async () => {
+    if (!selectedOfferId) {
+      toast.error('Please select an item to offer in exchange');
+      return;
+    }
+
     setSwapping(true);
     try {
-      // Using swapService to create a swap request
       await swapService.createSwap({
         itemRequestedId: id,
-        itemOfferedId: null, // Logic can be updated if you want to select an item to offer
+        itemOfferedId: selectedOfferId,
         type: 'swap' 
       });
       
       toast.success('Swap request sent successfully!');
+      setShowSwapModal(false);
+      setSelectedOfferId(null);
     } catch (error) {
       console.error(error);
       toast.error(error.response?.data?.message || 'Failed to send swap request');
@@ -60,12 +107,17 @@ const ItemDetail = () => {
   };
 
   const handleWishlistToggle = () => {
-    if (!user) return;
+    if (!currentUserId) return;
     if (isInWishlist(id)) {
       removeFromWishlist(id);
     } else {
       addToWishlist(id);
     }
+  };
+
+  const getImageUrl = (img) => {
+    if (!img) return 'https://via.placeholder.com/600x600?text=No+Image';
+    return img.startsWith('http') ? img : `http://localhost:5000/uploads/${img}`;
   };
 
   if (loading) {
@@ -93,12 +145,14 @@ const ItemDetail = () => {
 
   const displayUser = item.uploader || item.owner;
   const imageUrls = item.images && item.images.length > 0 
-    ? item.images.map(img => img.startsWith('http') ? img : `http://localhost:5000/uploads/${img}`)
+    ? item.images.map(getImageUrl)
     : ['https://via.placeholder.com/600x600?text=No+Image'];
+
+  // 👇 FIX: Check if current user is owner (to hide button)
+  const isOwner = displayUser?._id === currentUserId;
 
   return (
     <Layout>
-      {/* Page Animation */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -128,12 +182,11 @@ const ItemDetail = () => {
                 <img
                   src={imageUrls[selectedImage]}
                   alt={item.title}
-                  // Image Fit Fix: object-contain to prevent cropping
                   className="w-full h-full object-contain p-2"
                   onError={(e) => { e.target.src = 'https://via.placeholder.com/600x600?text=No+Image'; }}
                 />
                 
-                {user && (
+                {currentUserId && (
                   <button
                     onClick={handleWishlistToggle}
                     className="absolute top-4 right-4 p-3 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-all active:scale-95"
@@ -224,14 +277,14 @@ const ItemDetail = () => {
                   </div>
                 </div>
 
-                {user?._id !== displayUser?._id && (
+                {/* 👇 FIX: Sirf tab dikhao jab User Login ho aur wo OWNER NA HO */}
+                {currentUserId && !isOwner && (
                   <Button 
                     size="large" 
-                    onClick={handleSwapRequest} 
-                    disabled={swapping}
+                    onClick={handleSwapClick} 
                     className="shadow-lg shadow-green-500/30 hover:shadow-green-500/50"
                   >
-                    {swapping ? 'Sending Request...' : 'Request Swap'}
+                    Request Swap
                   </Button>
                 )}
               </div>
@@ -239,6 +292,83 @@ const ItemDetail = () => {
           </div>
         </div>
       </motion.div>
+
+      {/* SWAP OFFER SELECTION MODAL */}
+      <AnimatePresence>
+        {showSwapModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]"
+            >
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-xl font-bold text-gray-900">Select an item to swap</h3>
+                <p className="text-sm text-gray-500 mt-1">Choose one of your items to offer in exchange for <strong>{item.title}</strong>.</p>
+              </div>
+
+              <div className="p-6 overflow-y-auto flex-1">
+                {loadingMyItems ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                  </div>
+                ) : myItems.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-600 mb-4">You don't have any approved items to swap.</p>
+                    <Link to="/add-item" className="text-green-600 font-medium hover:underline">List an item first!</Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3">
+                    {myItems.map((myItem) => (
+                      <div 
+                        key={myItem._id}
+                        onClick={() => setSelectedOfferId(myItem._id)}
+                        className={`flex items-center gap-4 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                          selectedOfferId === myItem._id 
+                          ? 'border-green-500 bg-green-50' 
+                          : 'border-gray-200 hover:border-green-300'
+                        }`}
+                      >
+                        <img 
+                          src={getImageUrl(myItem.images[0])} 
+                          alt={myItem.title} 
+                          className="w-16 h-16 rounded-lg object-cover bg-white"
+                        />
+                        <div className="flex-1">
+                          <h4 className="font-bold text-gray-900">{myItem.title}</h4>
+                          <p className="text-xs text-gray-500">{myItem.condition} • {myItem.brand || 'No Brand'}</p>
+                        </div>
+                        {selectedOfferId === myItem._id && (
+                          <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="p-6 border-t border-gray-100 flex gap-3 bg-gray-50">
+                <button 
+                  onClick={() => { setShowSwapModal(false); setSelectedOfferId(null); }}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={submitSwapRequest}
+                  disabled={!selectedOfferId || swapping}
+                  className="flex-1 py-2.5 rounded-xl bg-green-600 text-white font-medium hover:bg-green-700 shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  {swapping ? 'Sending...' : 'Confirm Swap'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </Layout>
   );
 };

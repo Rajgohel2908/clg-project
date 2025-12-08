@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext'; // User check ke liye
+import { useAuth } from '../context/AuthContext';
 import Layout from '../layouts/Layout';
 import Button from '../components/ui/Button';
 import { swapService } from '../services/swapService';
-import { toast } from 'react-hot-toast'; // Errors dikhane ke liye
+import { toast } from 'react-hot-toast';
+import api from '../services/api';
 
 const Swaps = () => {
   const { user } = useAuth();
@@ -11,7 +12,9 @@ const Swaps = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
 
-  // Page load hone par swaps fetch karo
+  // 👇 FIX: User ID ko sahi se pakadna (Refresh issue fix)
+  const currentUserId = user ? (user._id || user.id) : null;
+
   useEffect(() => {
     if (user) {
       fetchSwaps();
@@ -31,42 +34,59 @@ const Swaps = () => {
     }
   };
 
-  // Actions: Accept, Reject, Complete
+  // Helper to fix image URLs
+  const getImageUrl = (img) => {
+    if (!img) return 'https://via.placeholder.com/100x100?text=No+Image';
+    return img.startsWith('http') ? img : `http://localhost:5000/uploads/${img}`;
+  };
+
+  // --- ACTIONS ---
+
   const handleAcceptSwap = async (swapId) => {
     try {
       await swapService.acceptSwap(swapId);
       toast.success('Swap accepted!');
-      fetchSwaps(); // List refresh karo
+      fetchSwaps();
     } catch (error) {
-      console.error('Error accepting swap:', error);
-      toast.error('Failed to accept swap');
+      toast.error(error.response?.data?.message || 'Failed to accept swap');
     }
   };
 
   const handleRejectSwap = async (swapId) => {
-    if(!window.confirm("Are you sure you want to reject this request?")) return;
+    if(!window.confirm("Reject this request?")) return;
     try {
       await swapService.rejectSwap(swapId);
       toast.success('Swap rejected');
       fetchSwaps();
     } catch (error) {
-      console.error('Error rejecting swap:', error);
-      toast.error('Failed to reject swap');
+      toast.error(error.response?.data?.message || 'Failed to reject swap');
     }
   };
 
   const handleCompleteSwap = async (swapId) => {
     try {
       await swapService.completeSwap(swapId);
-      toast.success('Swap marked as completed!');
+      toast.success('Swap completed!');
       fetchSwaps();
     } catch (error) {
-      console.error('Error completing swap:', error);
       toast.error('Failed to complete swap');
     }
   };
 
-  // Tabs ke hisaab se filter karo
+  // 👇 CANCEL Function (Requester ke liye)
+  const handleCancelSwap = async (swapId) => {
+    if(!window.confirm("Are you sure you want to cancel this request?")) return;
+    try {
+      // Backend me delete API call
+      await api.delete(`/swaps/${swapId}`);
+      toast.success('Request cancelled');
+      setSwaps(prev => prev.filter(s => s._id !== swapId));
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to cancel request');
+    }
+  };
+
   const filteredSwaps = swaps.filter(swap => {
     if (activeTab === 'all') return true;
     return (swap.status || '').toString().toLowerCase() === activeTab;
@@ -91,7 +111,7 @@ const Swaps = () => {
             <p className="text-gray-600">Manage your swap requests and ongoing exchanges.</p>
           </div>
 
-          {/* Tabs Navigation */}
+          {/* Tabs */}
           <div className="bg-white shadow-sm rounded-lg mb-6 overflow-x-auto">
             <div className="border-b border-gray-200">
               <nav className="-mb-px flex space-x-8 px-6 min-w-max">
@@ -112,152 +132,149 @@ const Swaps = () => {
             </div>
           </div>
 
-          {/* Swaps List */}
           {loading ? (
             <div className="flex justify-center items-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
             </div>
           ) : filteredSwaps.length === 0 ? (
             <div className="bg-white shadow-sm rounded-lg p-12 text-center border border-gray-100">
-              <div className="mx-auto h-12 w-12 text-gray-300 mb-3">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
-              </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No swaps found</h3>
-              <p className="text-gray-600">
-                {activeTab === 'all'
-                  ? "You haven't made or received any swap requests yet."
-                  : `No ${activeTab} swaps found.`
-                }
-              </p>
+              <p className="text-gray-600">No {activeTab} swaps found.</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredSwaps.map((swap) => (
-                <div key={swap._id} className="bg-white shadow-sm rounded-lg p-6 border border-gray-100 hover:shadow-md transition-shadow">
-                  {/* Swap Header */}
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {swap.requester?._id === user?.id ? 'Outgoing Request' : 'Incoming Request'}
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        {new Date(swap.createdAt).toLocaleDateString()} • ID: {swap._id.slice(-6)}
-                      </p>
-                    </div>
-                    <span className={`px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wide ${getStatusColor(swap.status)}`}>
-                      {swap.status}
-                    </span>
-                  </div>
-
-                  {/* Items Comparison Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 relative">
+              {filteredSwaps.map((swap) => {
+                // 👇 MAIN LOGIC FIX: Identify if I am the Requester
+                // Hame swap.requester object ho sakta hai ya string ID
+                const requesterId = swap.requester?._id || swap.requester;
+                const isRequester = requesterId === currentUserId;
+                
+                return (
+                  <div key={swap._id} className="bg-white shadow-sm rounded-lg p-6 border border-gray-100 hover:shadow-md transition-shadow">
                     
-                    {/* Your Side */}
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Your Item</h4>
-                      <div className="flex gap-3">
-                        <div className="w-16 h-16 bg-white rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
-                           <img 
-                             src={swap.myItem?.images?.[0] ? `http://localhost:5000/uploads/${swap.myItem.images[0]}` : 'https://via.placeholder.com/100'} 
-                             alt="My item" 
-                             className="w-full h-full object-cover"
-                           />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900 line-clamp-1">{swap.myItem?.title || "Unknown Item"}</p>
-                          <p className="text-sm text-gray-600 line-clamp-2 mt-1">{swap.myItem?.description}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Arrow Icon (Desktop Center) */}
-                    <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full border border-gray-200 items-center justify-center text-gray-400 z-10 shadow-sm">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
-                    </div>
-
-                    {/* Other Side */}
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Requested Item</h4>
-                      <div className="flex gap-3">
-                        <div className="w-16 h-16 bg-white rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
-                           <img 
-                             src={swap.requestedItem?.images?.[0] ? `http://localhost:5000/uploads/${swap.requestedItem.images[0]}` : 'https://via.placeholder.com/100'} 
-                             alt="Requested item" 
-                             className="w-full h-full object-cover"
-                           />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900 line-clamp-1">{swap.requestedItem?.title || "Unknown Item"}</p>
-                          <p className="text-sm text-gray-500 mt-1">
-                            Owner: <span className="font-medium text-gray-700">{swap.requestedItem?.owner?.name || "Unknown"}</span>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex justify-end items-center pt-4 border-t border-gray-100 gap-3">
-                    
-                    {/* Status: PENDING */}
-                    {swap.status === 'pending' && (
-                      <>
-                        {/* If I am the owner (Incoming Request), I can Accept/Reject */}
-                        {swap.owner?._id === user?.id || swap.owner === user?.id ? (
-                          <>
-                            <Button
-                              variant="danger"
-                              size="small"
-                              className="bg-white text-red-600 border border-red-200 hover:bg-red-50"
-                              onClick={() => handleRejectSwap(swap._id)}
-                            >
-                              Reject Request
-                            </Button>
-                            <Button
-                              variant="primary"
-                              size="small"
-                              onClick={() => handleAcceptSwap(swap._id)}
-                            >
-                              Accept Swap
-                            </Button>
-                          </>
-                        ) : (
-                          // If I am the requester (Outgoing Request)
-                          <span className="text-sm text-yellow-600 font-medium bg-yellow-50 px-3 py-1 rounded-md">
-                            Waiting for response...
-                          </span>
-                        )}
-                      </>
-                    )}
-
-                    {/* Status: ACCEPTED */}
-                    {swap.status === 'accepted' && (
-                      <div className="w-full flex items-center justify-between">
-                        <p className="text-sm text-green-700 bg-green-50 px-3 py-1 rounded-md border border-green-100">
-                          🎉 Swap accepted! Please arrange the exchange.
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {isRequester ? 'Outgoing Request (You asked)' : 'Incoming Request (They asked)'}
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                          ID: {swap._id.slice(-6)} • {new Date(swap.createdAt).toLocaleDateString()}
                         </p>
-                        <Button variant="primary" size="small" onClick={() => handleCompleteSwap(swap._id)}>
-                          Mark Completed
-                        </Button>
                       </div>
-                    )}
+                      <span className={`px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wide ${getStatusColor(swap.status)}`}>
+                        {swap.status}
+                      </span>
+                    </div>
 
-                    {/* Status: COMPLETED */}
-                    {swap.status === 'completed' && (
-                      <p className="text-sm text-blue-700 w-full text-center bg-blue-50 px-3 py-2 rounded-md border border-blue-100">
-                        ✅ This swap has been completed successfully!
-                      </p>
-                    )}
-                    
-                    {/* Status: REJECTED */}
-                    {swap.status === 'rejected' && (
-                      <p className="text-sm text-red-600">
-                        This request was rejected.
-                      </p>
-                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                      {/* My Side */}
+                      <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                          {isRequester ? "You Offered" : "You Give"}
+                        </h4>
+                        <div className="flex gap-3">
+                          <div className="w-16 h-16 bg-white rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
+                            <img 
+                              src={getImageUrl(swap.myItem?.images?.[0])} 
+                              alt="Item" 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900 line-clamp-1">{swap.myItem?.title || "Unknown Item"}</p>
+                            <p className="text-sm text-gray-600 line-clamp-2 mt-1">{swap.myItem?.description}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Their Side */}
+                      <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                          {isRequester ? "You Want" : "They Offer"}
+                        </h4>
+                        <div className="flex gap-3">
+                          <div className="w-16 h-16 bg-white rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
+                            <img 
+                              src={getImageUrl(swap.requestedItem?.images?.[0])} 
+                              alt="Item" 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900 line-clamp-1">{swap.requestedItem?.title || "Unknown Item"}</p>
+                            <p className="text-sm text-gray-500 mt-1">
+                              Owner: <span className="font-medium text-gray-700">{swap.requestedItem?.owner?.name || "Unknown"}</span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex justify-end items-center pt-4 border-t border-gray-100 gap-3">
+                      
+                      {swap.status === 'pending' && (
+                        <>
+                          {isRequester ? (
+                            // ✅ CANCEL BUTTON (For Requester)
+                            <Button
+                              variant="outline"
+                              size="small"
+                              className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                              onClick={() => handleCancelSwap(swap._id)}
+                            >
+                              Cancel Request
+                            </Button>
+                          ) : (
+                            // ✅ ACCEPT/REJECT (For Owner)
+                            <>
+                              <Button
+                                variant="danger"
+                                size="small"
+                                className="bg-white text-red-600 border border-red-200 hover:bg-red-50"
+                                onClick={() => handleRejectSwap(swap._id)}
+                              >
+                                Reject
+                              </Button>
+                              <Button
+                                variant="primary"
+                                size="small"
+                                onClick={() => handleAcceptSwap(swap._id)}
+                              >
+                                Accept Swap
+                              </Button>
+                            </>
+                          )}
+                        </>
+                      )}
+
+                      {swap.status === 'accepted' && (
+                        <div className="w-full flex items-center justify-between">
+                          <p className="text-sm text-green-700 font-medium">
+                            🎉 Swap Accepted! Connect with {isRequester ? swap.requestedItem?.owner?.name : swap.requester?.name} to exchange.
+                          </p>
+                          <Button variant="primary" size="small" onClick={() => handleCompleteSwap(swap._id)}>
+                            Mark Completed
+                          </Button>
+                        </div>
+                      )}
+
+                      {swap.status === 'completed' && (
+                        <p className="text-sm text-blue-700 w-full text-center bg-blue-50 px-3 py-2 rounded-md border border-blue-100 font-medium">
+                          ✅ Swap successfully completed!
+                        </p>
+                      )}
+
+                      {swap.status === 'rejected' && (
+                        <p className="text-sm text-red-600 font-medium bg-red-50 px-3 py-2 rounded-md border border-red-100 w-full text-center">
+                          ❌ This request was rejected.
+                        </p>
+                      )}
+                    </div>
+
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
