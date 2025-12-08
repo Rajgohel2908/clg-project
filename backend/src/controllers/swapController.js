@@ -88,6 +88,33 @@ const createSwap = async (req, res) => {
   }
 };
 
+const getSwapById = async (req, res) => {
+  try {
+    const swap = await Swap.findById(req.params.id)
+      .populate('requester', 'name email')
+      .populate('owner', 'name email')
+      .populate('itemRequested')
+      .populate('itemOffered');
+
+    if (!swap) {
+      return res.status(404).json({ message: 'Swap not found' });
+    }
+
+    // Security check: only participants or admin can view
+    const userId = req.user.id.toString();
+    const isParticipant = swap.requester._id.toString() === userId || swap.owner._id.toString() === userId;
+
+    if (req.user.role !== 'admin' && !isParticipant) {
+      return res.status(403).json({ message: 'Not authorized to view this swap' });
+    }
+
+    res.json(swap);
+  } catch (error) {
+    console.error('getSwapById error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 const listUserSwaps = async (req, res) => {
   try {
     const swaps = await Swap.find({
@@ -129,8 +156,8 @@ const listUserSwaps = async (req, res) => {
 
       // Determine myItem for the current user
       const currentUserId = req.user.id.toString();
-      const requesterId = obj.requester?._id ? obj.requester._id.toString() : (obj.requester?._id ? obj.requester._id.toString() : null);
-      const ownerId = obj.owner?._id ? obj.owner._id.toString() : (obj.owner ? obj.owner.toString() : null);
+      const requesterId = obj.requester?._id?.toString() || obj.requester?.toString();
+      const ownerId = obj.owner?._id?.toString() || obj.owner?.toString();
 
       if (requesterId && requesterId === currentUserId) {
         // requester offered itemOffered (their own item)
@@ -316,7 +343,7 @@ const completeSwap = async (req, res) => {
   }
 };
 
-module.exports = { createSwap, listUserSwaps, acceptSwap, rejectSwap, completeSwap };
+module.exports = { createSwap, getSwapById, listUserSwaps, acceptSwap, rejectSwap, completeSwap };
 
 // Debug helper: return raw swaps for a user (only in non-production or when DEBUG=true)
 const debugSwaps = async (req, res) => {

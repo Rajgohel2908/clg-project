@@ -23,7 +23,13 @@ const REAL_USERS = [
   { name: "Priya Sharma", email: "priya@example.com" },
   { name: "Amit Verma", email: "amit@example.com" },
   { name: "Sneha Patel", email: "sneha@example.com" },
-  { name: "Vikram Singh", email: "vikram@example.com" }
+  { name: "Vikram Singh", email: "vikram@example.com" },
+  // ... (purane users ke baad comma lagakar ye paste karein)
+  { name: "Kavita Singh", email: "kavita@example.com" },
+  { name: "Manish Gupta", email: "manish@example.com" },
+  { name: "Zara Khan", email: "zara@example.com" },
+  { name: "Ishaan Roy", email: "ishaan@example.com" },
+  { name: "Meera Nair", email: "meera@example.com" }
 ];
 const COMMON_PASS = "pass123";
 
@@ -65,7 +71,34 @@ const ITEMS_DATA = [
   { title: "Steel Water Bottle", category: "other", type: "Bottle", brand: "Milton", color: "Silver", condition: "new", image: "https://images.unsplash.com/photo-1602143407151-11115cd4e69b?auto=format&fit=crop&w=600&q=80", desc: "Insulated bottle, keeps water cold for 12h." },
   { title: "Leather Journal", category: "other", type: "Stationery", brand: "Generic", color: "Brown", condition: "new", image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80", desc: "Handmade paper diary. Premium feel." },
   { title: "Desk Plant Pot", category: "other", type: "Decor", brand: "Home", color: "White", condition: "new", image: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=600&q=80", desc: "Minimalist ceramic pot for succulents." },
-  { title: "Bluetooth Speaker", category: "other", type: "Electronics", brand: "JBL", color: "Blue", condition: "good", image: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=600&q=80", desc: "Portable waterproof speaker." }
+  { title: "Bluetooth Speaker", category: "other", type: "Electronics", brand: "JBL", color: "Blue", condition: "good", image: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=600&q=80", desc: "Portable waterproof speaker." },
+  // --- NEW CLOTHING ---
+  { title: "Silk Saree", category: "clothing", type: "Saree", brand: "FabIndia", color: "Red", condition: "new", image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80", desc: "Elegant Banarasi silk saree with gold border. Unworn." },
+  { title: "Men's Linen Kurta", category: "clothing", type: "Kurta", brand: "Manyavar", color: "Yellow", condition: "good", image: "https://images.unsplash.com/photo-1598263720743-98a287a9883f?auto=format&fit=crop&w=600&q=80", desc: "Traditional yellow kurta, comfortable for festivities." },
+  { title: "Puffer Jacket", category: "clothing", type: "Jacket", brand: "North Face", color: "Black", condition: "like new", image: "https://images.unsplash.com/photo-1545594861-3bef43ff22c7?auto=format&fit=crop&w=600&q=80", desc: "Heavy winter jacket, water resistant. Size L." },
+  { title: "Cargo Pants", category: "clothing", type: "Pants", brand: "Superdry", color: "Green", condition: "fair", image: "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&w=600&q=80", desc: "Rugged utility pants with 6 pockets." },
+  { title: "Yoga Leggings", category: "clothing", type: "Activewear", brand: "Lululemon", color: "Purple", condition: "good", image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=600&q=80", desc: "High waist stretchable yoga pants." },
+  { title: "Woolen Scarf", category: "clothing", type: "Scarf", brand: "Burberry", color: "Checkered", condition: "new", image: "https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?auto=format&fit=crop&w=600&q=80", desc: "Soft cashmere feel scarf for winter." },
+  { title: "Summer Shorts", category: "clothing", type: "Shorts", brand: "H&M", color: "Blue", condition: "good", image: "https://images.unsplash.com/photo-1591195853828-11db59a44f6b?auto=format&fit=crop&w=600&q=80", desc: "Cotton casual shorts, perfect for beach." },
+  { title: "Leather Jacket", category: "clothing", type: "Jacket", brand: "AllSaints", color: "Black", condition: "like new", image: "https://images.unsplash.com/photo-1551028919-ac7675cf5063?auto=format&fit=crop&w=600&q=80", desc: "Genuine leather biker jacket. Size M." },
+
+  // --- NEW SHOES ---
+  { title: "Hiking Boots", category: "shoes", type: "Boots", brand: "Timberland", color: "Brown", condition: "good", image: "https://images.unsplash.com/photo-1605034313761-73ea4a0cfbf3?auto=format&fit=crop&w=600&q=80", desc: "Waterproof boots for trekking. Size 9." },
+  { title: "Ballet Flats", category: "shoes", type: "Flats", brand: "H&M", color: "Pink", condition: "new", image: "https://images.unsplash.com/photo-1560343090-f0409e92791a?auto=format&fit=crop&w=600&q=80", desc: "Comfortable slip-on flats for daily wear." },
+  { title: "Oxford Shoes", category: "shoes", type: "Formal", brand: "Hush Puppies", color: "Tan", condition: "like new", image: "https://images.unsplash.com/photo-1449505278894-297fdb3edbc1?auto=format&fit=crop&w=600&q=80", desc: "Formal shoes with memory foam sole." },
+  { title: "Sport Sandals", category: "shoes", type: "Sandals", brand: "Crocs", color: "Grey", condition: "good", image: "https://images.unsplash.com/photo-1603808033192-082d6919d3e1?auto=format&fit=crop&w=600&q=80", desc: "All-terrain sandals with adjustable straps." },
+
+  // --- NEW ACCESSORIES ---
+  { title: "Gold Pendant", category: "accessories", type: "Jewelry", brand: "CaratLane", color: "Gold", condition: "new", image: "https://images.unsplash.com/photo-1599643478518-17488fbbcd75?auto=format&fit=crop&w=600&q=80", desc: "18k gold plated simple pendant chain." },
+  { title: "Duffle Bag", category: "bags", type: "Travel", brand: "American Tourister", color: "Blue", condition: "good", image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&q=80", desc: "Gym and travel duffle bag. Spacious." }, // (Using generic bag image that works well)
+  { title: "Snapback Cap", category: "accessories", type: "Hat", brand: "New Era", color: "Black", condition: "new", image: "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=600&q=80", desc: "Trendy cap with flat brim." },
+  { title: "Winter Gloves", category: "accessories", type: "Gloves", brand: "Generic", color: "Brown", condition: "new", image: "https://images.unsplash.com/photo-1520023023023-455b80613233?auto=format&fit=crop&w=600&q=80", desc: "Leather finish warm gloves." },
+
+  // --- NEW OTHER ITEMS ---
+  { title: "Polaroid Camera", category: "other", type: "Electronics", brand: "Fujifilm", color: "Mint", condition: "like new", image: "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80", desc: "Instax mini instant camera. Comes with film." },
+  { title: "Study Lamp", category: "other", type: "Decor", brand: "Philips", color: "White", condition: "good", image: "https://images.unsplash.com/photo-1534234828563-0af9c5a73b74?auto=format&fit=crop&w=600&q=80", desc: "LED desk lamp with adjustable brightness." },
+  { title: "Ukulele", category: "other", type: "Music", brand: "Kadence", color: "Wood", condition: "like new", image: "https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=600&q=80", desc: "Soprano ukulele, perfect for beginners." },
+  { title: "Art Set", category: "other", type: "Stationery", brand: "Faber Castell", color: "Multicolor", condition: "new", image: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=600&q=80", desc: "Complete sketching and color pencil set." }
 ];
 
 const seed = async () => {

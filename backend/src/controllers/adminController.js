@@ -1,6 +1,8 @@
 const Item = require('../models/Item');
 const User = require('../models/User');
-const Swap = require('../models/Swap'); // Swap model import kiya
+const Swap = require('../models/Swap');
+const fs = require('fs');
+const path = require('path');
 
 // Existing functions...
 const listPendingItems = async (req, res) => {
@@ -16,8 +18,6 @@ const listPendingItems = async (req, res) => {
   }
 };
 
-// backend/src/controllers/adminController.js
-
 const approveItem = async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -29,15 +29,13 @@ const approveItem = async (req, res) => {
       return res.status(404).json({ message: 'Item not found' });
     }
 
-    // Sirf tab points add karein agar item pehle se approved nahi tha
     if (item.status !== 'approved') {
         item.status = 'approved';
         await item.save();
 
-        // LOGIC ADDED: Uploader ko dhoondo aur points add karo
         const uploader = await User.findById(item.uploader);
         if (uploader) {
-            uploader.points += item.pointsValue; // Points add kar diye
+            uploader.points += item.pointsValue;
             await uploader.save();
         }
     }
@@ -71,7 +69,6 @@ const deleteItem = async (req, res) => {
   }
 };
 
-// 👇 NEW: Real Stats Fetch karne ke liye
 const getDashboardStats = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments({ role: 'user' });
@@ -79,24 +76,17 @@ const getDashboardStats = async (req, res) => {
     const pendingItems = await Item.countDocuments({ status: 'pending' });
     const totalSwaps = await Swap.countDocuments();
 
-    res.json({
-      totalUsers,
-      totalItems,
-      pendingItems,
-      totalSwaps
-    });
+    res.json({ totalUsers, totalItems, pendingItems, totalSwaps });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-// 👇 NEW: Saare Users ki list lane ke liye
 const getAllUsers = async (req, res) => {
   try {
-    // Admins ko list mein mat dikhana, sirf normal users
     const users = await User.find({ role: { $ne: 'admin' } })
-      .select('-password') // Password mat bhejna galti se bhi
+      .select('-password')
       .sort({ createdAt: -1 });
     res.json(users);
   } catch (error) {
@@ -105,24 +95,15 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-// Delete User and all their items
 const deleteUser = async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Admin access required' });
     }
-
     const userId = req.params.id;
-    
-    // Delete all user's items
     await Item.deleteMany({ uploader: userId });
-    
-    // Delete all user's swaps
     await Swap.deleteMany({ $or: [{ requester: userId }, { recipient: userId }] });
-    
-    // Delete user
     await User.findByIdAndDelete(userId);
-    
     res.json({ message: 'User and all their data deleted successfully' });
   } catch (error) {
     console.error(error);
@@ -130,20 +111,17 @@ const deleteUser = async (req, res) => {
   }
 };
 
-// Update User Points
 const updateUserPoints = async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Admin access required' });
     }
-
     const { points } = req.body;
     const user = await User.findByIdAndUpdate(
       req.params.id,
       { points: parseInt(points) },
       { new: true }
     ).select('-password');
-
     res.json({ message: 'Points updated', user });
   } catch (error) {
     console.error(error);
@@ -151,29 +129,23 @@ const updateUserPoints = async (req, res) => {
   }
 };
 
-// Reset User Password
 const resetUserPassword = async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Admin access required' });
     }
-
     const bcrypt = require('bcryptjs');
     const { newPassword } = req.body;
-
     if (!newPassword || newPassword.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
     }
-
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
-
     const user = await User.findByIdAndUpdate(
       req.params.id,
       { password: hashedPassword },
       { new: true }
     ).select('-password');
-
     res.json({ message: 'Password reset successfully', user });
   } catch (error) {
     console.error(error);
@@ -181,19 +153,56 @@ const resetUserPassword = async (req, res) => {
   }
 };
 
-// Get items for a specific user (admin only)
 const getUserItemsById = async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Admin access required' });
     }
-
     const userId = req.params.id;
     const items = await Item.find({ uploader: userId }).sort({ createdAt: -1 }).populate('uploader', 'name');
-      console.log(`getUserItemsById: user=${userId} itemsFound=${items.length}`);
-      res.json({ count: items.length, items });
+    res.json({ count: items.length, items });
   } catch (error) {
     console.error('getUserItemsById error', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// 👇 NEW FUNCTION: Delete specific image from item
+const deleteItemImage = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+
+    const { itemId } = req.params;
+    const { imageName } = req.body; // Image filename/url to delete
+
+    const item = await Item.findById(itemId);
+    if (!item) return res.status(404).json({ message: 'Item not found' });
+
+    // Filter out the image
+    const initialLength = item.images.length;
+    item.images = item.images.filter(img => img !== imageName);
+
+    if (item.images.length === initialLength) {
+        return res.status(404).json({ message: 'Image not found in this item' });
+    }
+
+    await item.save();
+
+    // If it's a local file (not http), delete from uploads folder
+    if (imageName && !imageName.startsWith('http')) {
+        const filePath = path.join(__dirname, '..', 'uploads', imageName);
+        if (fs.existsSync(filePath)) {
+            fs.unlink(filePath, (err) => {
+                if (err) console.error('Error deleting file:', err);
+            });
+        }
+    }
+
+    res.json({ message: 'Image deleted successfully', images: item.images });
+  } catch (error) {
+    console.error('deleteItemImage error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -208,5 +217,6 @@ module.exports = {
   deleteUser,
   updateUserPoints,
   resetUserPassword,
-  getUserItemsById
+  getUserItemsById,
+  deleteItemImage // Exported
 };

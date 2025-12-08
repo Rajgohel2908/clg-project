@@ -1,5 +1,5 @@
 const express = require('express');
-const { createSwap, listUserSwaps, acceptSwap, rejectSwap, completeSwap, debugSwaps } = require('../controllers/swapController');
+const { createSwap, getSwapById, listUserSwaps, acceptSwap, rejectSwap, completeSwap, debugSwaps } = require('../controllers/swapController');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
@@ -12,6 +12,9 @@ router.post('/', createSwap);
 
 // List user's swaps
 router.get('/my-swaps', listUserSwaps);
+
+// Get a single swap by ID
+router.get('/:id', getSwapById);
 
 // Accept a swap (owner only)
 router.put('/:id/accept', acceptSwap);
