@@ -1,7 +1,6 @@
 const Item = require('../models/Item');
 const User = require('../models/User');
 
-// Simple points calculation based on condition
 const calculatePoints = (condition) => {
   switch (condition) {
     case 'new': return 10;
@@ -21,7 +20,7 @@ const listItems = async (req, res) => {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
-        { locationName: { $regex: search, $options: 'i' } } // Search by location too!
+        { locationName: { $regex: search, $options: 'i' } } 
       ];
     }
 
@@ -63,14 +62,9 @@ const getItem = async (req, res) => {
 
 const createItem = async (req, res) => {
   try {
-    // Added locationName to destructuring
-    const { title, description, category, type, size, condition, tags, latitude, longitude, locationName } = req.body;
+    // 👇 Yahan 'brand' aur 'color' add kiya
+    const { title, description, category, type, size, condition, tags, latitude, longitude, locationName, brand, color } = req.body;
     const images = req.files ? req.files.map(file => file.filename) : [];
-
-    console.log('CreateItem called');
-    console.log('Files received:', req.files);
-    console.log('Image filenames:', images);
-    console.log('User:', req.user?.id);
 
     if (!title || !description || !category || !condition) {
       return res.status(400).json({ message: 'Title, description, category, and condition are required' });
@@ -84,14 +78,18 @@ const createItem = async (req, res) => {
       type,
       size,
       condition,
+      
+      // 👇 Inko save object mein dala
+      brand,
+      color,
+
       tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
       uploader: req.user.id,
       pointsValue: calculatePoints(condition),
-      locationName: locationName, // Saving the address text
-      status: 'pending' // Set to pending for admin approval
+      locationName: locationName, 
+      status: 'pending' 
     };
 
-    // Add location if coordinates are provided
     if (latitude && longitude) {
       const lat = parseFloat(latitude);
       const lon = parseFloat(longitude);
@@ -128,7 +126,8 @@ const updateItem = async (req, res) => {
       return res.status(400).json({ message: 'Cannot update item in current status' });
     }
 
-    const { title, description, category, type, size, condition, tags, locationName } = req.body;
+    // 👇 Yahan bhi 'brand' aur 'color' add kiya
+    const { title, description, category, type, size, condition, tags, locationName, brand, color } = req.body;
     const images = req.files && req.files.length > 0 ? req.files.map(file => file.filename) : item.images;
 
     item.title = title || item.title;
@@ -138,10 +137,15 @@ const updateItem = async (req, res) => {
     item.type = type || item.type;
     item.size = size || item.size;
     item.condition = condition || item.condition;
+    
+    // 👇 Update logic
+    if (brand) item.brand = brand;
+    if (color) item.color = color;
+
     item.tags = tags ? tags.split(',').map(tag => tag.trim()) : item.tags;
     item.pointsValue = calculatePoints(item.condition);
     
-    if (locationName) item.locationName = locationName; // Update location name
+    if (locationName) item.locationName = locationName; 
 
     await item.save();
     await item.populate('uploader', 'name');

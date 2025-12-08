@@ -37,7 +37,9 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Token expired or invalid
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      // Fix: पेज रीलोड करने के बजाय सिर्फ टोकन हटाएं। 
+      // अगर हम यहाँ window.location.href = '/login' करेंगे तो वो एरर देगा।
+      // UI अपने आप अपडेट हो जाएगा या यूजर खुद लॉगिन बटन दबाएगा।
     }
     return Promise.reject(error);
   }

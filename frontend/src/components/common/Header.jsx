@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useUI } from '../../context/UIContext'; // UI Context import किया
 
 const Header = () => {
   const { user, logout } = useAuth();
+  const { openAuthModal } = useUI(); // Modal open function
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
@@ -52,9 +54,11 @@ const Header = () => {
             <Link to="/swaps" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors">
               My Swaps
             </Link>
-            <Link to="/dashboard" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors">
-              Dashboard
-            </Link>
+            {user && (
+              <Link to="/dashboard" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors">
+                Dashboard
+              </Link>
+            )}
           </nav>
 
           {/* User Profile & Dropdown */}
@@ -83,42 +87,30 @@ const Header = () => {
                     </div>
 
                     <div className="py-1">
-                      {/* Admin Dashboard - Only if Admin */}
                       {user.role === 'admin' && (
                         <Link 
                           to="/admin" 
                           className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700"
                           onClick={() => setShowDropdown(false)}
                         >
-                          <svg className="mr-3 h-5 w-5 text-gray-400 group-hover:text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                          </svg>
                           Admin Dashboard
                         </Link>
                       )}
-
-                      {/* Profile */}
+                      
                       <Link 
                         to="/profile" 
                         className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700"
                         onClick={() => setShowDropdown(false)}
                       >
-                        <svg className="mr-3 h-5 w-5 text-gray-400 group-hover:text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
                         Your Profile
                       </Link>
                     </div>
 
                     <div className="border-t border-gray-100 pt-1">
-                      {/* Logout */}
                       <button 
                         onClick={handleLogout} 
                         className="group flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                       >
-                        <svg className="mr-3 h-5 w-5 text-red-400 group-hover:text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
                         Sign out
                       </button>
                     </div>
@@ -127,8 +119,19 @@ const Header = () => {
               </div>
             ) : (
               <div className="flex items-center space-x-4">
-                <Link to="/login" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors">Sign In</Link>
-                <Link to="/signup" className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 shadow-sm transition-colors">Sign Up</Link>
+                {/* यहाँ Link की जगह button लगा दिया है जो Modal खोलेगा */}
+                <button 
+                  onClick={() => openAuthModal('login')} 
+                  className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors"
+                >
+                  Sign In
+                </button>
+                <button 
+                  onClick={() => openAuthModal('signup')} 
+                  className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 shadow-sm transition-colors"
+                >
+                  Sign Up
+                </button>
               </div>
             )}
           </div>

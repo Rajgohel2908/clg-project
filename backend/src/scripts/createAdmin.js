@@ -16,7 +16,7 @@ const createAdminUser = async () => {
     console.log('MongoDB connected');
 
     // Option 1: Update existing user to admin by email
-    const emailToUpdate = 'admin@example.com'; // Change this to your email
+    const emailToUpdate = 'admin@gmail.com'; // admin email to create/update
     const existingUser = await User.findOne({ email: emailToUpdate.toLowerCase() });
     
     if (existingUser) {
@@ -30,7 +30,7 @@ const createAdminUser = async () => {
 
       const adminUser = new User({
         name: 'Admin User',
-        email: 'admin@example.com',
+        email: emailToUpdate.toLowerCase(),
         password: hashedPassword,
         role: 'admin',
         points: 0
@@ -38,7 +38,7 @@ const createAdminUser = async () => {
 
       await adminUser.save();
       console.log('✓ Admin user created successfully');
-      console.log('Email: admin@example.com');
+      console.log(`Email: ${emailToUpdate}`);
       console.log('Password: admin123');
     }
 

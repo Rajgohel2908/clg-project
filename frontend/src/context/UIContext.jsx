@@ -17,7 +17,13 @@ export const UIProvider = ({ children }) => {
     setAuthModalOpen(false);
   };
 
-  const value = { isAuthModalOpen, authModalView, setAuthModalView, openAuthModal, closeAuthModal };
+  const value = { 
+    isAuthModalOpen, 
+    authModalView, 
+    setAuthModalView, 
+    openAuthModal, 
+    closeAuthModal 
+  };
 
   return <UIContext.Provider value={value}>{children}</UIContext.Provider>;
 };

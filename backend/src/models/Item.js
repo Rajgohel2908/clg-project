@@ -5,6 +5,11 @@ const itemSchema = new mongoose.Schema({
   description: { type: String },
   images: [{ type: String }],
   category: { type: String },
+  
+  // 👇 Ye dono fields missing thi, inhein add kiya
+  brand: { type: String },
+  color: { type: String },
+  
   type: { type: String },
   size: { type: String },
   condition: { type: String },
@@ -13,13 +18,11 @@ const itemSchema = new mongoose.Schema({
   status: { type: String, enum: ['pending', 'approved', 'rejected', 'swapped', 'available'], default: 'pending' },
   pointsValue: { type: Number, default: 0 },
   
-  // 👇 New Field for Address
   locationName: { type: String },
 
-  // GeoJSON field (Coordinates)
   location: {
     type: { type: String, enum: ['Point'] },
-    coordinates: { type: [Number], index: '2dsphere' } // [longitude, latitude]
+    coordinates: { type: [Number], index: '2dsphere' } 
   },
   createdAt: { type: Date, default: Date.now }
 });
