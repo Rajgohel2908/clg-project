@@ -7,6 +7,11 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   points: { type: Number, default: 0 },
   wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Item' }],
+  
+  // Reset Password Fields
+  resetPasswordToken: String,
+  resetPasswordExpire: Date,
+  
   createdAt: { type: Date, default: Date.now }
 });
 

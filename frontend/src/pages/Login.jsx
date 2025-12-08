@@ -3,7 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import Button from '../components/ui/Button';
 
-const Login = ({ switchToSignup, onSuccess }) => {
+// switchToForgotPassword prop add kiya
+const Login = ({ switchToSignup, switchToForgotPassword, onSuccess }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -22,10 +23,6 @@ const Login = ({ switchToSignup, onSuccess }) => {
   const validateForm = () => {
     if (!formData.email || !formData.password) {
       toast.error('Please fill in all fields');
-      return false;
-    }
-    if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      toast.error('Please enter a valid email address');
       return false;
     }
     return true;
@@ -137,9 +134,14 @@ const Login = ({ switchToSignup, onSuccess }) => {
           </div>
 
           <div className="text-sm">
-            <a href="#" className="font-medium text-green-600 hover:text-green-500">
+            {/* Button click par ab forgot password view khulega */}
+            <button 
+              type="button" 
+              onClick={switchToForgotPassword}
+              className="font-medium text-green-600 hover:text-green-500"
+            >
               Forgot password?
-            </a>
+            </button>
           </div>
         </div>
 

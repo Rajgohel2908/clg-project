@@ -6,29 +6,27 @@ import { UIProvider, useUI } from './context/UIContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { AnimatePresence } from 'framer-motion';
 
-import AuthModal from './context/AuthModal'; // Login and Signup are now shown in the modal.
+import AuthModal from './context/AuthModal';
 import Dashboard from './pages/Dashboard';
 import Landing from './pages/Landing';
 import Items from './pages/Items';
-// 👇 FIXED: Correct file name 'ItemDetail' (bina 's' ke)
 import ItemDetail from './pages/ItemDetail'; 
 import AddItem from './pages/AddItem';
 import Profile from './pages/Profile';
 import Swaps from './pages/Swaps';
 import Wishlist from './pages/Wishlist';
 import AdminDashboard from './pages/AdminDashboard';
+import ResetPassword from './pages/ResetPassword'; // Import kiya
 
-// Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
-    return <div className="flex justify-center items-center h-screen">Loading...</div>; // Or a spinner component
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
   }
 
   if (!user) {
-    // Redirect to home page, but pass a state to tell the app to open the login modal.
     return <Navigate to="/" state={{ from: location, requireAuth: true }} replace />;
   }
 
@@ -43,7 +41,6 @@ function AppRoutes() {
   useEffect(() => {
     if (location.state?.requireAuth) {
       openAuthModal();
-      // Clean the state to prevent modal from re-opening on refresh
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location, openAuthModal, navigate]);
@@ -55,6 +52,9 @@ function AppRoutes() {
         <Route path="/items" element={<Items />} />
         <Route path="/items/:id" element={<ItemDetail />} />
         
+        {/* Reset Password Route Public hai */}
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/add-item" element={<ProtectedRoute><AddItem /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
@@ -69,13 +69,6 @@ function AppRoutes() {
 }
 
 function App() {
-  useEffect(() => {
-    // Global error handler
-    window.onerror = function (message, source, lineno, colno, error) {
-      console.error('Global error:', { message, source, lineno, colno, error });
-    };
-  }, []);
-
   return (
     <AuthProvider>
       <UIProvider>
