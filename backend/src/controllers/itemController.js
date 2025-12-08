@@ -14,13 +14,14 @@ const calculatePoints = (condition) => {
 const listItems = async (req, res) => {
   try {
     const { search, category, type, condition, page = 1, limit = 10 } = req.query;
-    const query = { status: 'approved' };
+    const query = { status: 'approved' }; // Only approved items
 
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
-        { locationName: { $regex: search, $options: 'i' } } 
+        { locationName: { $regex: search, $options: 'i' } },
+        { brand: { $regex: search, $options: 'i' } }
       ];
     }
 
@@ -50,24 +51,21 @@ const listItems = async (req, res) => {
 const getItem = async (req, res) => {
   try {
     const item = await Item.findById(req.params.id).populate('uploader', 'name email');
-    if (!item) {
-      return res.status(404).json({ message: 'Item not found' });
-    }
+    if (!item) return res.status(404).json({ message: 'Item not found' });
     res.json(item);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
 const createItem = async (req, res) => {
   try {
-    // 👇 Yahan 'brand' aur 'color' add kiya
+    // Sabhi fields accept karo
     const { title, description, category, type, size, condition, tags, latitude, longitude, locationName, brand, color } = req.body;
     const images = req.files ? req.files.map(file => file.filename) : [];
 
     if (!title || !description || !category || !condition) {
-      return res.status(400).json({ message: 'Title, description, category, and condition are required' });
+      return res.status(400).json({ message: 'Basic details are required' });
     }
 
     const itemData = {
@@ -78,34 +76,26 @@ const createItem = async (req, res) => {
       type,
       size,
       condition,
-      
-      // 👇 Inko save object mein dala
-      brand,
-      color,
-
+      brand,  // Save Brand
+      color,  // Save Color
       tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
       uploader: req.user.id,
       pointsValue: calculatePoints(condition),
-      locationName: locationName, 
-      status: 'pending' 
+      locationName: locationName,
+      status: 'pending' // Admin approval chahiye
     };
 
     if (latitude && longitude) {
       const lat = parseFloat(latitude);
       const lon = parseFloat(longitude);
-
-      if (!isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0) {
-        itemData.location = {
-          type: 'Point',
-          coordinates: [lon, lat]
-        };
+      if (!isNaN(lat) && !isNaN(lon)) {
+        itemData.location = { type: 'Point', coordinates: [lon, lat] };
       }
     }
 
     const item = new Item(itemData);
     await item.save();
-    await item.populate('uploader', 'name');
-
+    
     res.status(201).json(item);
   } catch (error) {
     console.error(error);
@@ -113,75 +103,67 @@ const createItem = async (req, res) => {
   }
 };
 
+// ... Update/Delete/GetUserItems same rahenge
 const updateItem = async (req, res) => {
-  try {
-    const item = await Item.findById(req.params.id);
-    if (!item) return res.status(404).json({ message: 'Item not found' });
-
-    if (item.uploader.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized' });
+    try {
+      const item = await Item.findById(req.params.id);
+      if (!item) return res.status(404).json({ message: 'Item not found' });
+  
+      if (item.uploader.toString() !== req.user.id) {
+        return res.status(403).json({ message: 'Not authorized' });
+      }
+  
+      if (!['pending', 'available'].includes(item.status)) {
+        return res.status(400).json({ message: 'Cannot update item in current status' });
+      }
+  
+      const { title, description, category, type, size, condition, tags, locationName, brand, color } = req.body;
+      const images = req.files && req.files.length > 0 ? req.files.map(file => file.filename) : item.images;
+  
+      item.title = title || item.title;
+      item.description = description || item.description;
+      item.images = images;
+      item.category = category || item.category;
+      item.type = type || item.type;
+      item.size = size || item.size;
+      item.condition = condition || item.condition;
+      if(brand) item.brand = brand;
+      if(color) item.color = color;
+      item.tags = tags ? tags.split(',').map(tag => tag.trim()) : item.tags;
+      item.pointsValue = calculatePoints(item.condition);
+      if (locationName) item.locationName = locationName;
+  
+      await item.save();
+      res.json(item);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server error' });
     }
-
-    if (!['pending', 'available'].includes(item.status)) {
-      return res.status(400).json({ message: 'Cannot update item in current status' });
+  };
+  
+  const deleteItem = async (req, res) => {
+    try {
+      const item = await Item.findById(req.params.id);
+      if (!item) return res.status(404).json({ message: 'Item not found' });
+  
+      if (item.uploader.toString() !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Not authorized' });
+      }
+  
+      await Item.findByIdAndDelete(req.params.id);
+      res.json({ message: 'Item deleted' });
+    } catch (error) {
+      res.status(500).json({ message: 'Server error' });
     }
-
-    // 👇 Yahan bhi 'brand' aur 'color' add kiya
-    const { title, description, category, type, size, condition, tags, locationName, brand, color } = req.body;
-    const images = req.files && req.files.length > 0 ? req.files.map(file => file.filename) : item.images;
-
-    item.title = title || item.title;
-    item.description = description || item.description;
-    item.images = images;
-    item.category = category || item.category;
-    item.type = type || item.type;
-    item.size = size || item.size;
-    item.condition = condition || item.condition;
-    
-    // 👇 Update logic
-    if (brand) item.brand = brand;
-    if (color) item.color = color;
-
-    item.tags = tags ? tags.split(',').map(tag => tag.trim()) : item.tags;
-    item.pointsValue = calculatePoints(item.condition);
-    
-    if (locationName) item.locationName = locationName; 
-
-    await item.save();
-    await item.populate('uploader', 'name');
-
-    res.json(item);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-const deleteItem = async (req, res) => {
-  try {
-    const item = await Item.findById(req.params.id);
-    if (!item) return res.status(404).json({ message: 'Item not found' });
-
-    if (item.uploader.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Not authorized' });
+  };
+  
+  const getUserItems = async (req, res) => {
+    try {
+      const items = await Item.find({ uploader: req.user.id }).sort({ createdAt: -1 });
+      res.json(items);
+    } catch (error) {
+      res.status(500).json({ message: 'Server error' });
     }
-
-    await Item.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Item deleted' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-const getUserItems = async (req, res) => {
-  try {
-    const items = await Item.find({ uploader: req.user.id }).sort({ createdAt: -1 });
-    res.json(items);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
+  };
 
 module.exports = { listItems, getItem, createItem, updateItem, deleteItem, getUserItems };

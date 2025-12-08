@@ -6,7 +6,7 @@ const itemSchema = new mongoose.Schema({
   images: [{ type: String }],
   category: { type: String },
   
-  // 👇 Ye dono fields missing thi, inhein add kiya
+  // New Fields for Manual Entry
   brand: { type: String },
   color: { type: String },
   

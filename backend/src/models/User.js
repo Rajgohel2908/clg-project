@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema({
   points: { type: Number, default: 0 },
   wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Item' }],
   
-  // Reset Password Fields
+  // Forgot Password ke liye zaroori fields
   resetPasswordToken: String,
   resetPasswordExpire: Date,
   
