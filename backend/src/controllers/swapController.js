@@ -188,7 +188,7 @@ const deleteSwap = async (req, res) => {
         await Item.findByIdAndUpdate(swap.itemOffered, { status: 'available' });
 
         // Finally, delete the swap
-        await swap.remove();
+        await Swap.findByIdAndDelete(swapId);
 
         res.status(200).json({ message: 'Swap cancelled successfully' });
     } catch (error) {
