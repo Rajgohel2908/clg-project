@@ -17,6 +17,7 @@ import Swaps from './pages/Swaps';
 import Wishlist from './pages/Wishlist';
 import AdminDashboard from './pages/AdminDashboard';
 import ResetPassword from './pages/ResetPassword'; // Import kiya
+import SwapDetail from './pages/SwapDetail';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -56,15 +57,16 @@ function AppRoutes() {
         <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/add-item" element={<ProtectedRoute><AddItem /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path="/swaps" element={<ProtectedRoute><Swaps /></ProtectedRoute>} />
-        <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
-        <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-        
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </AnimatePresence>
+                <Route path="/add-item" element={<ProtectedRoute><AddItem /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/swaps" element={<ProtectedRoute><Swaps /></ProtectedRoute>} />
+                <Route path="/swaps/:id" element={<ProtectedRoute><SwapDetail /></ProtectedRoute>} />
+                <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
+                <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+                
+                <Route path="*" element={<Navigate to="/" />} />
+              </Routes>
+            </AnimatePresence>
   );
 }
 

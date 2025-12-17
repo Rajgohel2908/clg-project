@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../layouts/Layout';
 import Button from '../components/ui/Button';
@@ -148,6 +149,9 @@ const Swaps = () => {
                 // Hame swap.requester object ho sakta hai ya string ID
                 const requesterId = swap.requester?._id || swap.requester;
                 const isRequester = requesterId === currentUserId;
+
+                const myItem = isRequester ? swap.itemOffered : swap.itemRequested;
+                const theirItem = isRequester ? swap.itemRequested : swap.itemOffered;
                 
                 return (
                   <div key={swap._id} className="bg-white shadow-sm rounded-lg p-6 border border-gray-100 hover:shadow-md transition-shadow">
@@ -175,14 +179,14 @@ const Swaps = () => {
                         <div className="flex gap-3">
                           <div className="w-16 h-16 bg-white rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
                             <img 
-                              src={getImageUrl(swap.myItem?.images?.[0])} 
+                              src={getImageUrl(myItem?.images?.[0])} 
                               alt="Item" 
                               className="w-full h-full object-cover"
                             />
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-900 line-clamp-1">{swap.myItem?.title || "Unknown Item"}</p>
-                            <p className="text-sm text-gray-600 line-clamp-2 mt-1">{swap.myItem?.description}</p>
+                            <p className="font-semibold text-gray-900 line-clamp-1">{myItem?.title || "Unknown Item"}</p>
+                            <p className="text-sm text-gray-600 line-clamp-2 mt-1">{myItem?.description}</p>
                           </div>
                         </div>
                       </div>
@@ -195,15 +199,15 @@ const Swaps = () => {
                         <div className="flex gap-3">
                           <div className="w-16 h-16 bg-white rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
                             <img 
-                              src={getImageUrl(swap.requestedItem?.images?.[0])} 
+                              src={getImageUrl(theirItem?.images?.[0])} 
                               alt="Item" 
                               className="w-full h-full object-cover"
                             />
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-900 line-clamp-1">{swap.requestedItem?.title || "Unknown Item"}</p>
+                            <p className="font-semibold text-gray-900 line-clamp-1">{theirItem?.title || "Unknown Item"}</p>
                             <p className="text-sm text-gray-500 mt-1">
-                              Owner: <span className="font-medium text-gray-700">{swap.requestedItem?.owner?.name || "Unknown"}</span>
+                              Owner: <span className="font-medium text-gray-700">{theirItem?.owner?.name || "Unknown"}</span>
                             </p>
                           </div>
                         </div>
@@ -213,6 +217,14 @@ const Swaps = () => {
                     {/* Action Buttons */}
                     <div className="flex justify-end items-center pt-4 border-t border-gray-100 gap-3">
                       
+                      {swap.status !== 'pending' && swap.status !== 'rejected' && (
+                        <Link to={`/swaps/${swap._id}`}>
+                          <Button variant="outline" size="small">
+                            View Details
+                          </Button>
+                        </Link>
+                      )}
+
                       {swap.status === 'pending' && (
                         <>
                           {isRequester ? (
@@ -251,7 +263,7 @@ const Swaps = () => {
                       {swap.status === 'accepted' && (
                         <div className="w-full flex items-center justify-between">
                           <p className="text-sm text-green-700 font-medium">
-                            🎉 Swap Accepted! Connect with {isRequester ? swap.requestedItem?.owner?.name : swap.requester?.name} to exchange.
+                            🎉 Swap Accepted! Connect with {isRequester ? theirItem?.owner?.name : swap.requester?.name} to exchange.
                           </p>
                           <Button variant="primary" size="small" onClick={() => handleCompleteSwap(swap._id)}>
                             Mark Completed

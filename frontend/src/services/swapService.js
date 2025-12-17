@@ -6,7 +6,7 @@ export const swapService = {
     return response.data;
   },
 
-  getSwapById: async (id) => {
+  getSwapDetails: async (id) => {
     const response = await api.get(`/swaps/${id}`);
     return response.data;
   },
@@ -21,7 +21,7 @@ export const swapService = {
     return response.data;
   },
 
-  deleteSwap: async (id) => {
+  cancelSwap: async (id) => {
     const response = await api.delete(`/swaps/${id}`);
     return response.data;
   },

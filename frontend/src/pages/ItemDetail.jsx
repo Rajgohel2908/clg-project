@@ -89,10 +89,14 @@ const ItemDetail = () => {
 
     setSwapping(true);
     try {
+      const ownerId = item.uploader?._id || item.owner?._id;
+      const requesterId = user ? (user._id || user.id) : null;
+
       await swapService.createSwap({
+        requesterId,
+        ownerId,
         itemRequestedId: id,
         itemOfferedId: selectedOfferId,
-        type: 'swap' 
       });
       
       toast.success('Swap request sent successfully!');
