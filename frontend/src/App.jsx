@@ -19,6 +19,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import ResetPassword from './pages/ResetPassword';
 import SwapDetail from './pages/SwapDetail';
 import Notifications from './pages/Notifications';
+import Leaderboard from './pages/Leaderboard';
+import PublicProfile from './pages/PublicProfile';
 
 
 const ProtectedRoute = ({ children }) => {
@@ -54,6 +56,8 @@ function AppRoutes() {
         <Route path="/" element={<Landing />} />
         <Route path="/items" element={<Items />} />
         <Route path="/items/:id" element={<ItemDetail />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/user/:userId" element={<PublicProfile />} />
 
         {/* Reset Password Route Public hai */}
         <Route path="/reset-password/:token" element={<ResetPassword />} />
