@@ -51,6 +51,8 @@ app.use('/api/items', require('./routes/items'));
 app.use('/api/swaps', require('./routes/swaps'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/wishlist', require('./routes/wishlist'));
+app.use('/api/notifications', require('./routes/notifications')); // New: Notification routes
+
 
 const PORT = process.env.PORT || 5000;
 

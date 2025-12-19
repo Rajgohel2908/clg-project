@@ -1,13 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useUI } from '../../context/UIContext'; // UI Context import किया
+import { useUI } from '../../context/UIContext';
+import { notificationService } from '../../services/notificationService';
 
 const Header = () => {
   const { user, logout } = useAuth();
-  const { openAuthModal } = useUI(); // Modal open function
+  const { openAuthModal } = useUI();
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -19,6 +21,26 @@ const Header = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      if (user) {
+        try {
+          const data = await notificationService.getUnreadCount();
+          setUnreadCount(data.count || 0);
+        } catch (error) {
+          console.error('Failed to fetch unread count:', error);
+        }
+      }
+    };
+
+    fetchUnreadCount();
+
+    // Poll for new notifications every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+
+    return () => clearInterval(interval);
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -63,10 +85,27 @@ const Header = () => {
 
           {/* User Profile & Dropdown */}
           <div className="flex items-center space-x-4">
+            {/* Notification Bell (only when logged in) */}
+            {user && (
+              <Link
+                to="/notifications"
+                className="relative p-2 text-gray-700 hover:text-green-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Link>
+            )}
+
             {user ? (
               <div className="relative" ref={dropdownRef}>
-                <button 
-                  onClick={() => setShowDropdown(!showDropdown)} 
+                <button
+                  onClick={() => setShowDropdown(!showDropdown)}
                   className="flex items-center space-x-2 text-gray-700 hover:text-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 rounded-full p-1"
                 >
                   <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center shadow-sm">
@@ -88,17 +127,17 @@ const Header = () => {
 
                     <div className="py-1">
                       {user.role === 'admin' && (
-                        <Link 
-                          to="/admin" 
+                        <Link
+                          to="/admin"
                           className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700"
                           onClick={() => setShowDropdown(false)}
                         >
                           Admin Dashboard
                         </Link>
                       )}
-                      
-                      <Link 
-                        to="/profile" 
+
+                      <Link
+                        to="/profile"
                         className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700"
                         onClick={() => setShowDropdown(false)}
                       >
@@ -107,8 +146,8 @@ const Header = () => {
                     </div>
 
                     <div className="border-t border-gray-100 pt-1">
-                      <button 
-                        onClick={handleLogout} 
+                      <button
+                        onClick={handleLogout}
                         className="group flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                       >
                         Sign out
@@ -120,14 +159,14 @@ const Header = () => {
             ) : (
               <div className="flex items-center space-x-4">
                 {/* यहाँ Link की जगह button लगा दिया है जो Modal खोलेगा */}
-                <button 
-                  onClick={() => openAuthModal('login')} 
+                <button
+                  onClick={() => openAuthModal('login')}
                   className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors"
                 >
                   Sign In
                 </button>
-                <button 
-                  onClick={() => openAuthModal('signup')} 
+                <button
+                  onClick={() => openAuthModal('signup')}
                   className="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 shadow-sm transition-colors"
                 >
                   Sign Up

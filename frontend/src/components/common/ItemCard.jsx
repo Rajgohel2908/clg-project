@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useWishlist } from '../../context/WishlistContext';
 import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
+import { getRelativeTime } from '../../utils/timeUtils';
 
 const ItemCard = ({ item }) => {
   const {
@@ -15,7 +16,8 @@ const ItemCard = ({ item }) => {
     owner,
     uploader,
     pointsValue,
-    locationName
+    locationName,
+    createdAt
   } = item;
 
   const displayUser = uploader || owner;
@@ -52,7 +54,7 @@ const ItemCard = ({ item }) => {
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             onError={(e) => { e.target.src = 'https://via.placeholder.com/400x500?text=No+Image'; }}
           />
-          
+
           <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
           {/* Floating Glass Badges */}
@@ -73,9 +75,8 @@ const ItemCard = ({ item }) => {
               className="absolute top-3 right-3 p-2.5 bg-white/80 backdrop-blur-md rounded-full hover:bg-white transition-all duration-200 active:scale-95 shadow-sm"
             >
               <svg
-                className={`w-5 h-5 transition-colors duration-200 ${
-                  inWishlist ? 'fill-red-500 text-red-500' : 'fill-none text-gray-600'
-                }`}
+                className={`w-5 h-5 transition-colors duration-200 ${inWishlist ? 'fill-red-500 text-red-500' : 'fill-none text-gray-600'
+                  }`}
                 stroke="currentColor"
                 strokeWidth="2"
                 viewBox="0 0 24 24"
@@ -99,8 +100,13 @@ const ItemCard = ({ item }) => {
                   {locationName || 'Unknown'}
                 </p>
               </div>
+              {createdAt && (
+                <p className="text-[10px] font-medium text-gray-400 mt-0.5">
+                  Listed {getRelativeTime(createdAt)}
+                </p>
+              )}
             </div>
-            
+
             <div className="flex flex-col items-end">
               <span className="text-lg font-extrabold text-green-600">{pointsValue}</span>
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Points</span>

@@ -3,47 +3,68 @@ const Item = require('../models/Item');
 
 const getWishlist = async (req, res) => {
     try {
-        const user = await User.findById(req.user.id).populate('wishlist');
+        const user = await User.findById(req.user.id).populate({
+            path: 'wishlist',
+            populate: { path: 'owner', select: 'name email avatar' }
+        });
         res.json(user.wishlist);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server error' });
+        console.error('Error in getWishlist:', error);
+        res.status(500).json({ message: 'Server error retrieving wishlist' });
     }
 };
 
 const addToWishlist = async (req, res) => {
     try {
         const { itemId } = req.body;
-        const user = await User.findById(req.user.id);
 
-        if (!user.wishlist.includes(itemId)) {
-            user.wishlist.push(itemId);
-            await user.save();
+        if (!itemId) {
+            return res.status(400).json({ message: 'Item ID is required' });
         }
 
-        // Return the updated wishlist (populated)
-        await user.populate('wishlist');
-        res.json(user.wishlist);
+        // Use $addToSet to prevent duplicates and ensure atomic update
+        await User.findByIdAndUpdate(
+            req.user.id,
+            { $addToSet: { wishlist: itemId } }
+        );
+
+        // Fetch and return the populated wishlist
+        const populatedUser = await User.findById(req.user.id).populate({
+            path: 'wishlist',
+            populate: { path: 'owner', select: 'name email avatar' }
+        });
+
+        res.json(populatedUser.wishlist);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server error' });
+        console.error('Error in addToWishlist:', error);
+        res.status(500).json({ message: 'Server error adding to wishlist' });
     }
 };
 
 const removeFromWishlist = async (req, res) => {
     try {
         const { itemId } = req.params;
-        const user = await User.findById(req.user.id);
 
-        user.wishlist = user.wishlist.filter(id => id.toString() !== itemId);
-        await user.save();
+        if (!itemId) {
+            return res.status(400).json({ message: 'Item ID is required' });
+        }
 
-        // Return the updated wishlist (populated)
-        await user.populate('wishlist');
-        res.json(user.wishlist);
+        // Use $pull to remove the item atomically
+        await User.findByIdAndUpdate(
+            req.user.id,
+            { $pull: { wishlist: itemId } }
+        );
+
+        // Fetch and return the populated wishlist
+        const populatedUser = await User.findById(req.user.id).populate({
+            path: 'wishlist',
+            populate: { path: 'owner', select: 'name email avatar' }
+        });
+
+        res.json(populatedUser.wishlist);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server error' });
+        console.error('Error in removeFromWishlist:', error);
+        res.status(500).json({ message: 'Server error removing from wishlist' });
     }
 };
 
