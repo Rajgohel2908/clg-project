@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useUI } from '../../context/UIContext';
 import { notificationService } from '../../services/notificationService';
@@ -63,27 +63,69 @@ const Header = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8">
-            <Link to="/items" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors">
+          <nav className="hidden md:flex space-x-4">
+            <NavLink
+              to="/items"
+              className={({ isActive }) =>
+                isActive
+                  ? "bg-green-500 backdrop-blur-md text-white shadow-lg shadow-green-500/30 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300"
+                  : "text-gray-700 hover:text-green-600 hover:bg-green-50/50 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300"
+              }
+            >
               Browse Items
-            </Link>
-            <Link to="/add-item" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors">
+            </NavLink>
+            <NavLink
+              to="/add-item"
+              className={({ isActive }) =>
+                isActive
+                  ? "bg-green-500 backdrop-blur-md text-white shadow-lg shadow-green-500/30 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300"
+                  : "text-gray-700 hover:text-green-600 hover:bg-green-50/50 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300"
+              }
+            >
               List Item
-            </Link>
-            <Link to="/wishlist" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors">
+            </NavLink>
+            <NavLink
+              to="/wishlist"
+              className={({ isActive }) =>
+                isActive
+                  ? "bg-green-500 backdrop-blur-md text-white shadow-lg shadow-green-500/30 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300"
+                  : "text-gray-700 hover:text-green-600 hover:bg-green-50/50 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300"
+              }
+            >
               Wishlist
-            </Link>
-            <Link to="/swaps" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors">
+            </NavLink>
+            <NavLink
+              to="/swaps"
+              className={({ isActive }) =>
+                isActive
+                  ? "bg-green-500 backdrop-blur-md text-white shadow-lg shadow-green-500/30 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300"
+                  : "text-gray-700 hover:text-green-600 hover:bg-green-50/50 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300"
+              }
+            >
               My Swaps
-            </Link>
+            </NavLink>
             {user && (
-              <Link to="/dashboard" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors">
+              <NavLink
+                to="/dashboard"
+                className={({ isActive }) =>
+                  isActive
+                    ? "bg-green-500 backdrop-blur-md text-white shadow-lg shadow-green-500/30 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300"
+                    : "text-gray-700 hover:text-green-600 hover:bg-green-50/50 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300"
+                }
+              >
                 Dashboard
-              </Link>
+              </NavLink>
             )}
-            <Link to="/leaderboard" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors">
+            <NavLink
+              to="/leaderboard"
+              className={({ isActive }) =>
+                isActive
+                  ? "bg-green-500 backdrop-blur-md text-white shadow-lg shadow-green-500/30 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300"
+                  : "text-gray-700 hover:text-green-600 hover:bg-green-50/50 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300"
+              }
+            >
               Top Contributors
-            </Link>
+            </NavLink>
           </nav>
 
           {/* User Profile & Dropdown */}

@@ -5,7 +5,7 @@ const getWishlist = async (req, res) => {
     try {
         const user = await User.findById(req.user.id).populate({
             path: 'wishlist',
-            populate: { path: 'owner', select: 'name email avatar' }
+            populate: { path: 'uploader', select: 'name email avatar' }
         });
         res.json(user.wishlist);
     } catch (error) {
@@ -31,7 +31,7 @@ const addToWishlist = async (req, res) => {
         // Fetch and return the populated wishlist
         const populatedUser = await User.findById(req.user.id).populate({
             path: 'wishlist',
-            populate: { path: 'owner', select: 'name email avatar' }
+            populate: { path: 'uploader', select: 'name email avatar' }
         });
 
         res.json(populatedUser.wishlist);
@@ -58,7 +58,7 @@ const removeFromWishlist = async (req, res) => {
         // Fetch and return the populated wishlist
         const populatedUser = await User.findById(req.user.id).populate({
             path: 'wishlist',
-            populate: { path: 'owner', select: 'name email avatar' }
+            populate: { path: 'uploader', select: 'name email avatar' }
         });
 
         res.json(populatedUser.wishlist);
